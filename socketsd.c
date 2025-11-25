@@ -43,17 +43,36 @@ int errexit (char *format, char *arg)
 
 
 void Register_team(char *team_name){
-  int found = 0;
-  for(int i = 0; i < MAX_TEAMS; i = i + 1){
-    if(team[i] == NULL){
-      team[i] = team_name;
-      found = 1;
-      break;
+    int found = 0;
+    printf("ENTERS REGISTER_TEAM");
+    for (int i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] != NULL && strcmp(team[i], team_name) == 0) {
+            fprintf(stderr, "Team '%s' already exists\n", team_name);
+            return;
+        }
     }
-  }
-  if(found == 0){
-    fprintf (stderr,"No more teams are available to be added\n");
-  }
+
+    for (int i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] == NULL) {
+            team[i] = malloc(strlen(team_name) + 1);
+            if (team[i] == NULL) {
+                fprintf(stderr, "Memory allocation failed\n");
+                exit(1);
+            }
+            strcpy(team[i], team_name);
+            found = 1;
+            printf("Team '%s' successfully registered.\n", team_name);
+            break;
+        }
+    }
+    if (!found) {
+        fprintf(stderr, "No more team slots available.\n");
+    }
+
+    printf("Here are all the current teams\n");
+    for(int i = 0; i< MAX_TEAMS; i++){
+      printf("%s\n",team[i]);
+    }
 }
 void parseargs (int argc, char *argv [])
 {
@@ -101,7 +120,7 @@ int main (int argc, char *argv [])
     unsigned int addrlen;
     int sd, sd2;
     parseargs (argc,argv);
-    /* determine protocol */
+
     if ((protoinfo = getprotobyname (PROTOCOL)) == NULL)
         errexit ("cannot find protocol information for %s", PROTOCOL);
 
@@ -130,8 +149,9 @@ int main (int argc, char *argv [])
     sd2 = accept (sd,&addr,&addrlen);
     if (sd2 < 0)
         errexit ("error accepting connection", NULL);
-    
+    printf("BEFORE");
     if(ARG_TEAM_POS == cmd_line_flags ){
+      printf("IN");
       Register_team(team_name);
     }
     /* write message to the connection */
