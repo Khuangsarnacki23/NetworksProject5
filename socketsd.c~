@@ -1,0 +1,134 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <string.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define REQUIRED_ARGC 3
+#define PORT_POS 1
+#define MSG_POS 2
+#define ERROR 1
+#define QLEN 1
+#define PROTOCOL "tcp"
+#define BUFLEN 1024
+#define MAX_TEAMS 31
+#define MAX_PLAYERS 18
+#define ARG_MSG_POS  0x1
+#define ARG_PORT_POS 0x2
+#define ARG_TEAM_POS 0x4
+char *message_request = NULL;
+char *port_number = NULL;
+char team[MAX_TEAMS];
+char players[MAX_PLAYERS][MAX_TEAMS];
+unsigned short port_flag = 0;
+unsigned short message_flag = 0;
+unsigned short cmd_line_flags = 0;
+char *team_name = NULL;
+int usage (char *progname)
+{
+    fprintf (stderr,"usage: %s port msg\n", progname);
+    exit (ERROR);
+}
+
+int errexit (char *format, char *arg)
+{
+    fprintf (stderr,format,arg);
+    fprintf (stderr,"\n");
+    exit (ERROR);
+}
+
+
+void Register_team(char *team){
+
+}
+void parseargs (int argc, char *argv [])
+{
+    int opt;
+
+    while ((opt = getopt (argc, argv, "p:m:t")) != -1)
+    {
+        switch (opt)
+        {
+            case 'p':
+              port_flag |= ARG_PORT_POS;
+	      port_number = optarg;
+              break;
+	    case 'm':
+	      message_flag |= ARG_MSG_POS;
+	      message_request = optarg;
+	      break;
+	    case 't':
+	      team_flag |= ARG_TEAM_POS;
+	      cmd_line_flag = optarg;
+	    case '?':
+            default:
+              usage (argv [0]);
+        }
+    }
+    if (port_flag == 0)
+    {
+        fprintf (stderr,"error: no mode given\n");
+        usage (argv [0]);
+    }
+    if(message_flag == 0)
+    {
+      fprintf(stderr,"error: incorrect number of file names was given\n");
+      usage (argv [0]);
+    }
+}
+
+
+int main (int argc, char *argv [])
+{
+    struct sockaddr_in sin;
+    struct sockaddr addr;
+    struct protoent *protoinfo;
+    unsigned int addrlen;
+    int sd, sd2;
+    parseargs (argc,argv);
+    /* determine protocol */
+    if ((protoinfo = getprotobyname (PROTOCOL)) == NULL)
+        errexit ("cannot find protocol information for %s", PROTOCOL);
+
+    /* setup endpoint info */
+    memset ((char *)&sin,0x0,sizeof (sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = INADDR_ANY;
+    sin.sin_port = htons ((u_short) atoi (port_number));
+
+    /* allocate a socket */
+    /*   would be SOCK_DGRAM for UDP */
+    sd = socket(PF_INET, SOCK_STREAM, protoinfo->p_proto);
+    if (sd < 0)
+        errexit("cannot create socket", NULL);
+
+    /* bind the socket */
+    if (bind (sd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
+        errexit ("cannot bind to port %s", port_number);
+
+    /* listen for incoming connections */
+    if (listen (sd, QLEN) < 0)
+        errexit ("cannot listen on port %s\n", port_number);
+
+    /* accept a connection */
+    addrlen = sizeof (addr);
+    sd2 = accept (sd,&addr,&addrlen);
+    if (sd2 < 0)
+        errexit ("error accepting connection", NULL);
+    
+    if(ARG_TEAM_POS == cmd_line_flags ){
+      Register_team(team_name);
+    }
+    /* write message to the connection */
+    if (write (sd2,message_request,strlen (message_request)) < 0)
+        errexit ("error writing message: %s", message_request);
+
+    /* close connections and exit */
+    close (sd);
+    close (sd2);
+    exit (0);
+}
