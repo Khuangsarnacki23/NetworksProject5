@@ -44,7 +44,6 @@ int errexit (char *format, char *arg)
 
 void Register_team(char *team_name){
     int found = 0;
-    printf("ENTERS REGISTER_TEAM");
     for (int i = 0; i < MAX_TEAMS; i++) {
         if (team[i] != NULL && strcmp(team[i], team_name) == 0) {
             fprintf(stderr, "Team '%s' already exists\n", team_name);
@@ -55,10 +54,6 @@ void Register_team(char *team_name){
     for (int i = 0; i < MAX_TEAMS; i++) {
         if (team[i] == NULL) {
             team[i] = malloc(strlen(team_name) + 1);
-            if (team[i] == NULL) {
-                fprintf(stderr, "Memory allocation failed\n");
-                exit(1);
-            }
             strcpy(team[i], team_name);
             found = 1;
             printf("Team '%s' successfully registered.\n", team_name);
@@ -71,95 +66,156 @@ void Register_team(char *team_name){
 
     printf("Here are all the current teams\n");
     for(int i = 0; i< MAX_TEAMS; i++){
-      printf("%s\n",team[i]);
+      if(team[i] != NULL){
+	printf("%s\n",team[i]);
+      }
     }
 }
+
+void Register_player(char *player_name, char *team_name){
+    int found = 0;
+    for (int i = 0; i < MAX_TEAMS; i++) {
+      if (team[i] == team_name){
+	for (int j = 0; j<MAX_PLAYERS; j++){
+	  if(players[j][i] == player_name){
+	    fprintf(stderr, "Player '%s' already exists\n", player_name);
+            return;
+	  }
+	}
+      }
+    }
+
+    for (int i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] == team_name) {
+	  for(int j = 0; j<MAX_PLAYERS; j++){
+	    if(players[j][i] == NULL){
+	      players[j][i] = malloc(strlen(player_name) + 1);
+	      strcpy(player[j][i], team_name);
+	      found = 1;
+	      printf("Player '%s' successfully registered.\n", player_name);
+	      break;
+	    }
+	  }
+            break;
+        }
+    }
+    if (!found) {
+        fprintf(stderr, "No more player slots available.\n");
+    }
+
+    printf("Here are all the current players on the team\n");
+    for (int i = 0; i < MAX_TEAMS; i++) {
+      if (team[i] == team_name){
+	for (int j = 0; j<MAX_PLAYERS; j++){
+	  if(players[j][i] != NULL){
+	    printf("%s\n",players[j][i]);
+          }
+        }
+      }
+    }
+}
+
 void parseargs (int argc, char *argv [])
 {
     int opt;
 
-    while ((opt = getopt (argc, argv, "p:m:t:")) != -1)
+    while ((opt = getopt (argc, argv, "p:")) != -1)
     {
         switch (opt)
         {
             case 'p':
-              port_flag |= ARG_PORT_POS;
-	      port_number = optarg;
-              break;
-	    case 'm':
-	      message_flag |= ARG_MSG_POS;
-	      message_request = optarg;
-	      break;
-	    case 't':
-	      cmd_line_flags |= ARG_TEAM_POS;
-	      team_name = optarg;
-	      break;
-	    case '?':
+                port_flag |= ARG_PORT_POS;
+                port_number = optarg;
+                break;
             default:
-              usage (argv [0]);
+                usage (argv [0]);
         }
     }
     if (port_flag == 0)
     {
-        fprintf (stderr,"error: no mode given\n");
+        fprintf (stderr,"error: no port given\n");
         usage (argv [0]);
-    }
-    if(message_flag == 0)
-    {
-      fprintf(stderr,"error: incorrect number of file names was given\n");
-      usage (argv [0]);
     }
 }
 
+
+
+
+void handle_client(int sd2) {
+    char buf[BUFLEN];
+    ssize_t n = read(sd2, buf, BUFLEN - 1);
+    if (n <= 0) {
+        return;
+    }
+    buf[n] = '\0';
+
+    char cmd[32];
+    char arg[BUFLEN];
+
+    int num = sscanf(buf, "%31s %1023[^\n]", cmd, arg);
+    if (num >= 1) {
+        if (strcmp(cmd, "ADDTEAM") == 0 && num == 2) {
+            Register_team(arg);
+            const char *resp = "OK TEAM_ADDED\n";
+            write(sd2, resp, strlen(resp));
+	} else if (strcmp(cmd, "ADDPLAYER") == 0 && num == 2) {
+            Register_player(arg);
+            const char *resp = "OK PLAYER_ADDED\n";
+            write(sd2, resp, strlen(resp));
+        } else {
+            const char *resp = "ERR UNKNOWN_COMMAND_OR_ARGS\n";
+            write(sd2, resp, strlen(resp));
+        }
+    } else {
+        const char *resp = "ERR BAD_REQUEST\n";
+        write(sd2, resp, strlen(resp));
+    }
+}
 
 int main (int argc, char *argv [])
 {
     struct sockaddr_in sin;
     struct sockaddr addr;
     struct protoent *protoinfo;
-    unsigned int addrlen;
+    socklen_t addrlen;
     int sd, sd2;
-    parseargs (argc,argv);
 
-    if ((protoinfo = getprotobyname (PROTOCOL)) == NULL)
-        errexit ("cannot find protocol information for %s", PROTOCOL);
+    parseargs(argc, argv);
 
-    /* setup endpoint info */
-    memset ((char *)&sin,0x0,sizeof (sin));
+    if ((protoinfo = getprotobyname(PROTOCOL)) == NULL)
+        errexit("cannot find protocol information for %s", PROTOCOL);
+
+    memset((char *)&sin, 0x0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = INADDR_ANY;
-    sin.sin_port = htons ((u_short) atoi (port_number));
+    sin.sin_port = htons((u_short) atoi(port_number));
 
-    /* allocate a socket */
-    /*   would be SOCK_DGRAM for UDP */
     sd = socket(PF_INET, SOCK_STREAM, protoinfo->p_proto);
     if (sd < 0)
         errexit("cannot create socket", NULL);
 
-    /* bind the socket */
-    if (bind (sd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-        errexit ("cannot bind to port %s", port_number);
+    if (bind(sd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
+        errexit("cannot bind to port %s", port_number);
 
-    /* listen for incoming connections */
-    if (listen (sd, QLEN) < 0)
-        errexit ("cannot listen on port %s\n", port_number);
+    if (listen(sd, QLEN) < 0)
+        errexit("cannot listen on port %s\n", port_number);
+    
+    printf("Server listening on port %s...\n", port_number);
 
-    /* accept a connection */
-    addrlen = sizeof (addr);
-    sd2 = accept (sd,&addr,&addrlen);
-    if (sd2 < 0)
-        errexit ("error accepting connection", NULL);
-    printf("BEFORE");
-    if(ARG_TEAM_POS == cmd_line_flags ){
-      printf("IN");
-      Register_team(team_name);
+
+    for (;;) {
+        addrlen = sizeof(addr);
+        sd2 = accept(sd, &addr, &addrlen);
+        if (sd2 < 0) {
+            perror("accept failed");
+            continue;
+        }
+
+        handle_client(sd2);
+        close(sd2);
     }
-    /* write message to the connection */
-    if (write (sd2,message_request,strlen (message_request)) < 0)
-        errexit ("error writing message: %s", message_request);
 
-    /* close connections and exit */
-    close (sd);
-    close (sd2);
+
+    close(sd);
     exit (0);
 }
