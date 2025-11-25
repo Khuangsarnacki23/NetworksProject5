@@ -22,8 +22,8 @@
 #define ARG_TEAM_POS 0x4
 char *message_request = NULL;
 char *port_number = NULL;
-char team[MAX_TEAMS];
-char players[MAX_PLAYERS][MAX_TEAMS];
+char *team[MAX_TEAMS];
+char *players[MAX_PLAYERS][MAX_TEAMS];
 unsigned short port_flag = 0;
 unsigned short message_flag = 0;
 unsigned short cmd_line_flags = 0;
@@ -42,14 +42,24 @@ int errexit (char *format, char *arg)
 }
 
 
-void Register_team(char *team){
-
+void Register_team(char *team_name){
+  int found = 0;
+  for(int i = 0; i < MAX_TEAMS; i = i + 1){
+    if(team[i] == NULL){
+      team[i] = team_name;
+      found = 1;
+      break;
+    }
+  }
+  if(found == 0){
+    fprintf (stderr,"No more teams are available to be added\n");
+  }
 }
 void parseargs (int argc, char *argv [])
 {
     int opt;
 
-    while ((opt = getopt (argc, argv, "p:m:t")) != -1)
+    while ((opt = getopt (argc, argv, "p:m:t:")) != -1)
     {
         switch (opt)
         {
@@ -64,6 +74,7 @@ void parseargs (int argc, char *argv [])
 	    case 't':
 	      cmd_line_flags |= ARG_TEAM_POS;
 	      team_name = optarg;
+	      break;
 	    case '?':
             default:
               usage (argv [0]);
