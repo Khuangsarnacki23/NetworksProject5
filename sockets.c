@@ -105,9 +105,15 @@ int main (int argc, char *argv [])
     /* snarf whatever server provides and print it */
     memset (buffer,0x0,BUFLEN);
     ret = read (sd,buffer,BUFLEN - 1);
+    buffer[ret] = '\0';
     if (ret < 0)
         errexit ("reading error",NULL);
-    fprintf (stdout,"%s\n",buffer);
+    if(strncmp(buffer, "OK PLAYER_ADDED", 15) == 0){
+      fprintf(stdout,"Player %s has been added successfully\n",buffer);
+    }
+    else{
+      fprintf (stdout,"%s\n",buffer);
+    }
             
     /* close & exit */
     close (sd);
