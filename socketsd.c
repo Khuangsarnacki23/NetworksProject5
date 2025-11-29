@@ -8,50 +8,47 @@
 #include <netinet/in.h>
 
 #define ERROR 1
-#define QLEN 1
+#define QLEN  1
 #define PROTOCOL "tcp"
 #define BUFLEN 1024
-#define MAX_TEAMS 31
+
+#define MAX_TEAMS   31
 #define MAX_PLAYERS 18
-#define MAX_GAMES 64
-#define MAX_STR 31
-#define MAX_STATS 512
+#define MAX_GAMES   64
+#define MAX_STATS   512
 
 char *port_number = NULL;
+
 char *team[MAX_TEAMS];
 char *players[MAX_PLAYERS][MAX_TEAMS];
-int game_count = 0;
-
 
 typedef struct {
     int game_id;
     char date[32];
-    char time[16];
-    char location[MAX_STR];
-    char home_team[MAX_STR];
-    char away_team[MAX_STR];
+    char time[32];
+    char location[128];
+    char home_team[64];
+    char away_team[64];
 } Game;
 
-typedef struct {
-    char player_name[64];
-    char team_name[64];
-    int game_id;
+Game games[MAX_GAMES];
+int game_count = 0;
 
+typedef struct {
+    int game_id;
+    char team_name[64];
+    char player_name[64];
     int points;
     int assists;
     int rebounds;
-    int minutes_played;
+    int minutes;
 } PlayerStats;
-
-
-
-Game games[MAX_GAMES];
 
 PlayerStats stats[MAX_STATS];
 int stats_count = 0;
 
 
-int usage (char *progname) {
+int usage(char *progname) {
     fprintf(stderr, "usage: %s -p port\n", progname);
     exit(ERROR);
 }
@@ -62,13 +59,19 @@ int errexit(char *format, char *arg) {
     exit(ERROR);
 }
 
+void send_line(int sd2, const char *line) {
+    printf("S -> C: %s", line);
+    write(sd2, line, strlen(line));
+}
+
 
 int Register_team(const char *team_name) {
-    for (int i = 0; i < MAX_TEAMS; i++) {
+    int i;
+    for (i = 0; i < MAX_TEAMS; i++) {
         if (team[i] != NULL && strcmp(team[i], team_name) == 0)
             return 1;
     }
-    for (int i = 0; i < MAX_TEAMS; i++) {
+    for (i = 0; i < MAX_TEAMS; i++) {
         if (team[i] == NULL) {
             team[i] = malloc(strlen(team_name) + 1);
             strcpy(team[i], team_name);
@@ -78,67 +81,206 @@ int Register_team(const char *team_name) {
     return 2;
 }
 
-
 int Register_player(const char *player_name, const char *team_name) {
-    int idx = -1;
+    int i, j;
+    int team_idx = -1;
 
-    for (int i = 0; i < MAX_TEAMS; i++) {
+    for (i = 0; i < MAX_TEAMS; i++) {
         if (team[i] != NULL && strcmp(team[i], team_name) == 0) {
-            idx = i;
+            team_idx = i;
             break;
         }
     }
-    if (idx == -1) return 2;
+    if (team_idx == -1) return 2;
 
-    for (int j = 0; j < MAX_PLAYERS; j++) {
-        if (players[j][idx] != NULL &&
-            strcmp(players[j][idx], player_name) == 0)
+    for (j = 0; j < MAX_PLAYERS; j++) {
+        if (players[j][team_idx] != NULL &&
+            strcmp(players[j][team_idx], player_name) == 0)
             return 1;
     }
 
-    for (int j = 0; j < MAX_PLAYERS; j++) {
-        if (players[j][idx] == NULL) {
-            players[j][idx] = malloc(strlen(player_name) + 1);
-            strcpy(players[j][idx], player_name);
+    for (j = 0; j < MAX_PLAYERS; j++) {
+        if (players[j][team_idx] == NULL) {
+            players[j][team_idx] = malloc(strlen(player_name) + 1);
+            strcpy(players[j][team_idx], player_name);
             return 0;
         }
     }
     return 3;
 }
 
-int Create_game(const char *date, const char *time,
-                const char *location, const char *home,
-                const char *away)
+
+
+int team_exists(const char *team_name) {
+    int i;
+    for (i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] != NULL && strcmp(team[i], team_name) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+int game_exists(int game_id) {
+    return (game_id >= 0 && game_id < game_count);
+}
+
+int Create_game(const char *date_str, const char *time_str,
+                const char *location, const char *home, const char *away)
 {
+    if (!team_exists(home) || !team_exists(away))
+        return 2;
+
     if (game_count >= MAX_GAMES)
-        return 1;
+        return 3;
 
-    Game *g = &games[game_count];
+    games[game_count].game_id = game_count;
+    strncpy(games[game_count].date, date_str, sizeof(games[game_count].date)-1);
+    strncpy(games[game_count].time, time_str, sizeof(games[game_count].time)-1);
+    strncpy(games[game_count].location, location, sizeof(games[game_count].location)-1);
+    strncpy(games[game_count].home_team, home, sizeof(games[game_count].home_team)-1);
+    strncpy(games[game_count].away_team, away, sizeof(games[game_count].away_team)-1);
 
-    g->game_id = game_count;
-    strcpy(g->date, date);
-    strcpy(g->time, time);
-    strcpy(g->location, location);
-    strcpy(g->home_team, home);
-    strcpy(g->away_team, away);
+    games[game_count].date[sizeof(games[game_count].date)-1] = '\0';
+    games[game_count].time[sizeof(games[game_count].time)-1] = '\0';
+    games[game_count].location[sizeof(games[game_count].location)-1] = '\0';
+    games[game_count].home_team[sizeof(games[game_count].home_team)-1] = '\0';
+    games[game_count].away_team[sizeof(games[game_count].away_team)-1] = '\0';
 
     game_count++;
     return 0;
 }
 
+int player_on_team(const char *player_name, const char *team_name) {
+    int i, j;
+    int team_idx = -1;
+
+    for (i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] != NULL && strcmp(team[i], team_name) == 0) {
+            team_idx = i;
+            break;
+        }
+    }
+    if (team_idx == -1) return 0;
+
+    for (j = 0; j < MAX_PLAYERS; j++) {
+        if (players[j][team_idx] != NULL &&
+            strcmp(players[j][team_idx], player_name) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+int Record_stats(const char *player_name,
+                 const char *team_name,
+                 int game_id,
+                 int points,
+                 int assists,
+                 int rebounds,
+                 int minutes)
+{
+    if (!game_exists(game_id))             return 1;
+    if (!team_exists(team_name))           return 2;
+    if (!player_on_team(player_name, team_name)) return 3;
+    if (stats_count >= MAX_STATS)          return 4;
+
+    strncpy(stats[stats_count].player_name, player_name, 63);
+    strncpy(stats[stats_count].team_name,   team_name,   63);
+
+    stats[stats_count].player_name[63] = '\0';
+    stats[stats_count].team_name[63]   = '\0';
+
+    stats[stats_count].game_id  = game_id;
+    stats[stats_count].points   = points;
+    stats[stats_count].assists  = assists;
+    stats[stats_count].rebounds = rebounds;
+    stats[stats_count].minutes  = minutes;
+
+    stats_count++;
+    return 0;
+}
+
+
+void ListStats_player(int sd2, const char *player_name) {
+    int i, found = 0;
+    char line[BUFLEN];
+
+    for (i = 0; i < stats_count; i++) {
+        if (strcmp(stats[i].player_name, player_name) == 0) {
+            snprintf(line, sizeof(line),
+                     "STAT %d %s %s %d %d %d %d\n",
+                     stats[i].game_id,
+                     stats[i].team_name,
+                     stats[i].player_name,
+                     stats[i].points,
+                     stats[i].assists,
+                     stats[i].rebounds,
+                     stats[i].minutes);
+            send_line(sd2, line);
+            found = 1;
+        }
+    }
+    if (!found)
+        send_line(sd2, "ERR NO_STATS_FOR_PLAYER\n");
+}
+
+void ListStats_team(int sd2, const char *team_name) {
+    int i, found = 0;
+    char line[BUFLEN];
+
+    for (i = 0; i < stats_count; i++) {
+        if (strcmp(stats[i].team_name, team_name) == 0) {
+            snprintf(line, sizeof(line),
+                     "STAT %d %s %s %d %d %d %d\n",
+                     stats[i].game_id,
+                     stats[i].team_name,
+                     stats[i].player_name,
+                     stats[i].points,
+                     stats[i].assists,
+                     stats[i].rebounds,
+                     stats[i].minutes);
+            send_line(sd2, line);
+            found = 1;
+        }
+    }
+    if (!found)
+        send_line(sd2, "ERR NO_STATS_FOR_TEAM\n");
+}
+
+void ListStats_game(int sd2, int game_id) {
+    int i, found = 0;
+    char line[BUFLEN];
+
+    for (i = 0; i < stats_count; i++) {
+        if (stats[i].game_id == game_id) {
+            snprintf(line, sizeof(line),
+                     "STAT %d %s %s %d %d %d %d\n",
+                     stats[i].game_id,
+                     stats[i].team_name,
+                     stats[i].player_name,
+                     stats[i].points,
+                     stats[i].assists,
+                     stats[i].rebounds,
+                     stats[i].minutes);
+            send_line(sd2, line);
+            found = 1;
+        }
+    }
+    if (!found)
+        send_line(sd2, "ERR NO_STATS_FOR_GAME\n");
+}
+
 
 void parseargs(int argc, char *argv[]) {
-    int opt;
-    int port_flag = 0;
+    int opt, port_flag = 0;
 
     while ((opt = getopt(argc, argv, "p:")) != -1) {
         switch (opt) {
-            case 'p':
-                port_number = optarg;
-                port_flag = 1;
-                break;
-            default:
-                usage(argv[0]);
+        case 'p':
+            port_number = optarg;
+            port_flag = 1;
+            break;
+        default:
+            usage(argv[0]);
         }
     }
     if (!port_flag) usage(argv[0]);
@@ -146,46 +288,67 @@ void parseargs(int argc, char *argv[]) {
 
 void handle_client(int sd2) {
     char buf[BUFLEN];
-    ssize_t n = read(sd2, buf, BUFLEN - 1);
+    char cmd[32], arg1[128], arg2[128], arg3[128], arg4[128], arg5[128], arg6[128], arg7[128];
+    ssize_t n;
+    int num;
+
+    memset(buf, 0, sizeof(buf));
+    n = read(sd2, buf, BUFLEN - 1);
     if (n <= 0) return;
     buf[n] = '\0';
 
     printf("C -> S: %s", buf);
 
-    char cmd[32];
-    char arg1[128], arg2[128], arg3[128], arg4[128], arg5[128];
-    int num = sscanf(buf, "%31s %127s %127s %127s %127s %127s",
-                     cmd, arg1, arg2, arg3, arg4, arg5);
+    num = sscanf(buf,
+                 "%31s %127s %127s %127s %127s %127s %127s %127s",
+                 cmd, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 
-    const char *resp;
 
     if (num == 2 && strcmp(cmd, "ADDTEAM") == 0) {
         int s = Register_team(arg1);
-        if (s == 0) resp = "OK TEAM_ADDED\n";
-        else if (s == 1) resp = "ERR TEAM_EXISTS\n";
-        else resp = "ERR TEAM_FULL\n";
+        if (s == 0)      send_line(sd2, "OK TEAM_ADDED\n");
+        else if (s == 1) send_line(sd2, "ERR TEAM_EXISTS\n");
+        else             send_line(sd2, "ERR TEAM_FULL\n");
     }
     else if (num == 3 && strcmp(cmd, "ADDPLAYER") == 0) {
         int s = Register_player(arg2, arg1);
-        if (s == 0) resp = "OK PLAYER_ADDED\n";
-        else if (s == 1) resp = "ERR PLAYER_EXISTS\n";
-        else if (s == 2) resp = "ERR TEAM_NOT_FOUND\n";
-        else resp = "ERR PLAYER_FULL\n";
+        if (s == 0)      send_line(sd2, "OK PLAYER_ADDED\n");
+        else if (s == 1) send_line(sd2, "ERR PLAYER_EXISTS\n");
+        else if (s == 2) send_line(sd2, "ERR TEAM_NOT_FOUND\n");
+        else             send_line(sd2, "ERR PLAYER_FULL\n");
     }
     else if (num == 6 && strcmp(cmd, "CREATEGAME") == 0) {
         int s = Create_game(arg1, arg2, arg3, arg4, arg5);
-        if (s == 0) resp = "OK GAME_CREATED\n";
-        else if (s == 1) resp = "ERR INVALID_DATETIME\n";
-        else if (s == 2) resp = "ERR TEAM_NOT_FOUND\n";
-        else resp = "ERR GAME_FULL\n";
+        if (s == 0)      send_line(sd2, "OK GAME_CREATED\n");
+        else if (s == 2) send_line(sd2, "ERR TEAM_NOT_FOUND\n");
+        else             send_line(sd2, "ERR GAME_FULL\n");
+    }
+    else if (num == 8 && strcmp(cmd, "RECORDSTATS") == 0) {
+        int game_id  = atoi(arg1);
+        int points   = atoi(arg4);
+        int assists  = atoi(arg5);
+        int rebounds = atoi(arg6);
+        int minutes  = atoi(arg7);
+
+        int s = Record_stats(arg3, arg2, game_id, points, assists, rebounds, minutes);
+
+        if (s == 0)      send_line(sd2, "OK STATS_RECORDED\n");
+        else if (s == 1) send_line(sd2, "ERR GAME_NOT_FOUND\n");
+        else if (s == 2) send_line(sd2, "ERR TEAM_NOT_FOUND\n");
+        else if (s == 3) send_line(sd2, "ERR PLAYER_NOT_FOUND\n");
+        else             send_line(sd2, "ERR STATS_FULL\n");
+    }
+    else if (num >= 3 && strcmp(cmd, "LISTSTATS") == 0) {
+        if      (strcmp(arg1, "PLAYER") == 0) ListStats_player(sd2, arg2);
+        else if (strcmp(arg1, "TEAM")   == 0) ListStats_team(sd2, arg2);
+        else if (strcmp(arg1, "GAME")   == 0) ListStats_game(sd2, atoi(arg2));
+        else send_line(sd2, "ERR LISTSTATS_MODE\n");
     }
     else {
-        resp = "ERR UNKNOWN_COMMAND_OR_ARGS\n";
+        send_line(sd2, "ERR UNKNOWN_COMMAND_OR_ARGS\n");
     }
-
-    printf("S -> C: %s", resp);
-    write(sd2, resp, strlen(resp));
 }
+
 
 int main(int argc, char *argv[]) {
     struct sockaddr_in sin;
@@ -200,9 +363,9 @@ int main(int argc, char *argv[]) {
         errexit("cannot find protocol information for %s", PROTOCOL);
 
     memset(&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
+    sin.sin_family      = AF_INET;
     sin.sin_addr.s_addr = INADDR_ANY;
-    sin.sin_port = htons((u_short) atoi(port_number));
+    sin.sin_port        = htons((u_short) atoi(port_number));
 
     sd = socket(PF_INET, SOCK_STREAM, protoinfo->p_proto);
     if (sd < 0) errexit("cannot create socket", NULL);

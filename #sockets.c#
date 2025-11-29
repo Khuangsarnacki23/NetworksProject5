@@ -47,6 +47,7 @@ int assists = 0;  // -S
 int rebounds= 0;  // -R
 int minutes = 0;  // -M
 
+void usage(char *progname);
 
 
 void usage (char *progname)
@@ -219,14 +220,7 @@ void parseargs(int argc, char *argv[])
     }
 }
 
-int main (int argc, char *argv [])
-{
-    struct sockaddr_in sin;
-    struct hostent *hinfo;
-    struct protoent *protoinfo;
-    char buffer [BUFLEN];
-    int sd, ret;
-    printf("Before");
+
     parseargs(argc,argv);
     printf("ARGUMENTS PARSED");
     /* lookup the hostname */
