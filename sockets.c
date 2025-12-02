@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -24,7 +23,7 @@
 #define MODE_CREATEGAME  3
 #define MODE_RECORDSTATS 4
 #define MODE_LISTSTATS   5
-
+#define MODE_DUMPJSON 6 
 unsigned short host_flag = 0;
 unsigned short port_flag = 0;
 
@@ -33,21 +32,21 @@ char *port_number = NULL;
 
 int   mode        = MODE_NONE;
 
-char *team_name   = NULL;  // -n
-char *player_name = NULL;  // -u
-char *game_date   = NULL;  // -d
-char *game_time   = NULL;  // -o
-char *location    = NULL;  // -C
-char *home_team   = NULL;  // -H
-char *away_team   = NULL;  // -A
-int   game_id     = -1;    // -G
+char *team_name   = NULL;
+char *player_name = NULL;
+char *game_date   = NULL;
+char *game_time   = NULL;
+char *location    = NULL;
+char *home_team   = NULL;
+char *away_team   = NULL;
+int   game_id     = -1;  
 
-int points  = 0;  // -P
-int assists = 0;  // -S
-int rebounds= 0;  // -R
-int minutes = 0;  // -M
+int points  = 0;
+int assists = 0;
+int rebounds= 0;
+int minutes = 0;
 
-
+char message[BUFLEN];
 
 void usage (char *progname)
 {
@@ -67,8 +66,7 @@ void parseargs(int argc, char *argv[])
 {
     int opt;
 
-    while ((opt = getopt(argc, argv,
-                         "h:p:tbrln:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
+    while ((opt = getopt(argc, argv,"h:p:tbrlgj n:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
     {
         switch (opt) {
             case 'h':
@@ -81,73 +79,75 @@ void parseargs(int argc, char *argv[])
                 port_number = optarg;
                 break;
 
-
-            case 't':   /* add team */
+            case 't':
                 mode = MODE_ADDTEAM;
                 break;
 
-            case 'b':   /* add player */
+            case 'b':
                 mode = MODE_ADDPLAYER;
                 break;
 
-            case 'g':   /* create game */
+            case 'g':
                 mode = MODE_CREATEGAME;
                 break;
 
-            case 'r':   /* record stats */
+	    case 'j':
+	        mode = MODE_DUMPJSON;
+	        break;
+		
+            case 'r':
                 mode = MODE_RECORDSTATS;
                 break;
 
-            case 'l':   /* list stats */
+            case 'l':
                 mode = MODE_LISTSTATS;
                 break;
-
-
-            case 'n':   /* team name */
+		
+            case 'n':
                 team_name = optarg;
                 break;
 
-            case 'u':   /* player name */
+            case 'u':
                 player_name = optarg;
                 break;
 
-            case 'd':   /* date */
+            case 'd':
                 game_date = optarg;
                 break;
 
-            case 'o':   /* time */
+            case 'o':
                 game_time = optarg;
                 break;
 
-            case 'C':   /* location */
+            case 'C':
                 location = optarg;
                 break;
 
-            case 'H':   /* home team */
+            case 'H':
                 home_team = optarg;
                 break;
 
-            case 'A':   /* away team */
+            case 'A':
                 away_team = optarg;
                 break;
 
-            case 'G':   /* game id */
+            case 'G':
                 game_id = atoi(optarg);
                 break;
 
-            case 'P':   /* points */
+            case 'P':
                 points = atoi(optarg);
                 break;
 
-            case 'S':   /* assists */
+            case 'S':
                 assists = atoi(optarg);
                 break;
 
-            case 'R':   /* rebounds */
+            case 'R':
                 rebounds = atoi(optarg);
                 break;
 
-            case 'M':   /* minutes */
+            case 'M':
                 minutes = atoi(optarg);
                 break;
 
@@ -179,6 +179,9 @@ void parseargs(int argc, char *argv[])
                 fprintf(stderr, "error: ADDTEAM (-t) requires -n team_name\n");
                 usage(argv[0]);
             }
+	    else{
+		  snprintf(message, BUFLEN, "ADDTEAM %s\n", team_name);
+	    }
             break;
 
         case MODE_ADDPLAYER:
@@ -187,6 +190,9 @@ void parseargs(int argc, char *argv[])
                         "error: ADDPLAYER (-b) requires -n team_name and -u player_name\n");
                 usage(argv[0]);
             }
+	    else{
+	      snprintf(message, BUFLEN, "ADDPLAYER %s %s\n", team_name, player_name);
+	    }
             break;
 
         case MODE_CREATEGAME:
@@ -196,15 +202,21 @@ void parseargs(int argc, char *argv[])
                         "   -d date -o time -C location -H home_team -A away_team\n");
                 usage(argv[0]);
             }
+	    else{
+	      snprintf(message, BUFLEN, "CREATEGAME %s %s %s %s %s\n", game_date, game_time, location, home_team, away_team);
+	    }
             break;
 
         case MODE_RECORDSTATS:
-            if (game_id < 0 || !team_name || !player_name) {
+            if (game_id < 0 || !team_name || !player_name || !points || !assists || !rebounds || !minutes) {
                 fprintf(stderr,
                         "error: RECORDSTATS (-r) requires:\n"
                         "   -G game_id -n team_name -u player_name\n");
                 usage(argv[0]);
             }
+	    else{
+	      snprintf(message, BUFLEN, "RECORDSTATS %u %s %s %u %u %u %u\n", game_id, team_name, player_name, points, assists, rebounds, minutes);
+	    }
 
             break;
 
@@ -215,6 +227,18 @@ void parseargs(int argc, char *argv[])
                         "   -u player_name OR -n team_name OR -G game_id\n");
                 usage(argv[0]);
             }
+	    if(player_name){
+	      snprintf(message,BUFLEN,"LISTSTATS PLAYER %s\n",player_name);
+	    }
+	    else if(team_name){
+	      snprintf(message,BUFLEN,"LISTSTATS TEAM %s\n",team_name);
+	    }
+	    else{
+	      snprintf(message,BUFLEN,"LISTSTATS GAME %u\n", game_id);
+	    }
+            break;
+	 case MODE_DUMPJSON:
+            snprintf(message, BUFLEN, "DUMPJSON\n");
             break;
     }
 }
@@ -224,11 +248,8 @@ int main (int argc, char *argv [])
     struct sockaddr_in sin;
     struct hostent *hinfo;
     struct protoent *protoinfo;
-    char buffer [BUFLEN];
-    int sd, ret;
-    printf("Before");
+    int sd;
     parseargs(argc,argv);
-    printf("ARGUMENTS PARSED");
     /* lookup the hostname */
     hinfo = gethostbyname (host_name);
     if (hinfo == NULL)
@@ -242,26 +263,24 @@ int main (int argc, char *argv [])
 
     if ((protoinfo = getprotobyname (PROTOCOL)) == NULL)
         errexit ("cannot find protocol information for %s", PROTOCOL);
-    printf("BEFORE SOCKET");
     /* allocate a socket */
     /*   would be SOCK_DGRAM for UDP */
     sd = socket(PF_INET, SOCK_STREAM, protoinfo->p_proto);
     if (sd < 0)
         errexit("cannot create socket",NULL);
 
-    printf("HERE");
     /* connect the socket */
     if (connect (sd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
         errexit ("cannot connect", NULL);
-
-    /* snarf whatever server provides and print it */
-    memset (buffer,0x0,BUFLEN);
-    ret = read (sd,buffer,BUFLEN - 1);
-    buffer[ret] = '\0';
-    if (ret < 0)
-        errexit ("reading error",NULL);
-    printf("FINISHED");
-    fprintf (stdout,"%s\n",buffer);
+    char rcv_buffer [BUFLEN];
+    FILE *sp;
+    sp = fdopen(sd,"r+");
+    printf("%s\n",message);
+    fputs(message,sp);
+    fflush(sp);
+    while (fgets(rcv_buffer, BUFLEN, sp) != NULL) {
+      printf("%s", rcv_buffer);
+    }
     close (sd);
     exit (0);
 }

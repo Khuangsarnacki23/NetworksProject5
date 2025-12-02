@@ -269,6 +269,82 @@ void ListStats_game(int sd2, int game_id) {
         send_line(sd2, "ERR NO_STATS_FOR_GAME\n");
 }
 
+int write_json_files() {
+    FILE *f = fopen("league_dump.json", "w");
+    if (!f) {
+        perror("fopen league_dump.json");
+        return -1;
+    }
+
+    fprintf(f, "{\n");
+
+    fprintf(f, "  \"teams\": [\n");
+    int first = 1;
+    for (int i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] != NULL) {
+            if (!first) fprintf(f, ",\n");
+            fprintf(f, "    \"%s\"", team[i]);
+            first = 0;
+        }
+    }
+    fprintf(f, "\n  ],\n");
+
+    fprintf(f, "  \"players\": [\n");
+    first = 1;
+    for (int t = 0; t < MAX_TEAMS; t++) {
+        if (team[t] == NULL) continue;
+        for (int p = 0; p < MAX_PLAYERS; p++) {
+            if (players[p][t] != NULL) {
+                if (!first) fprintf(f, ",\n");
+                fprintf(f,
+                        "    { \"team\": \"%s\", \"name\": \"%s\" }",
+                        team[t], players[p][t]);
+                first = 0;
+            }
+        }
+    }
+    fprintf(f, "\n  ],\n");
+
+    fprintf(f, "  \"games\": [\n");
+    for (int i = 0; i < game_count; i++) {
+        fprintf(f,
+                "    { \"id\": %d, \"date\": \"%s\", \"time\": \"%s\", "
+                "\"location\": \"%s\", \"home_team\": \"%s\", \"away_team\": \"%s\" }",
+                games[i].game_id,
+                games[i].date,
+                games[i].time,
+                games[i].location,
+                games[i].home_team,
+                games[i].away_team);
+
+        if (i != game_count - 1) fprintf(f, ",\n");
+        else fprintf(f, "\n");
+    }
+    fprintf(f, "  ],\n");
+
+    fprintf(f, "  \"stats\": [\n");
+    for (int i = 0; i < stats_count; i++) {
+        fprintf(f,
+                "    { \"game_id\": %d, \"team\": \"%s\", \"player\": \"%s\", "
+                "\"points\": %d, \"assists\": %d, \"rebounds\": %d, \"minutes\": %d }",
+                stats[i].game_id,
+                stats[i].team_name,
+                stats[i].player_name,
+                stats[i].points,
+                stats[i].assists,
+                stats[i].rebounds,
+                stats[i].minutes);
+
+        if (i != stats_count - 1) fprintf(f, ",\n");
+        else fprintf(f, "\n");
+    }
+    fprintf(f, "  ]\n");
+
+    fprintf(f, "}\n");
+
+    fclose(f);
+    return 0;
+}
 
 void parseargs(int argc, char *argv[]) {
     int opt, port_flag = 0;
@@ -344,6 +420,13 @@ void handle_client(int sd2) {
         else if (strcmp(arg1, "GAME")   == 0) ListStats_game(sd2, atoi(arg2));
         else send_line(sd2, "ERR LISTSTATS_MODE\n");
     }
+    else if (num == 1 && strcmp(cmd, "DUMPJSON") == 0) {
+    if (write_json_files() == 0) {
+        send_line(sd2, "OK JSON_WRITTEN\n");
+    } else {
+        send_line(sd2, "ERR JSON_WRITE_FAILED\n");
+    }
+}
     else {
         send_line(sd2, "ERR UNKNOWN_COMMAND_OR_ARGS\n");
     }
