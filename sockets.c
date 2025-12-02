@@ -16,7 +16,18 @@
 
 #define ARG_HOST_POS 0x1
 #define ARG_PORT_POS 0x2
-
+#define ARG_TEAMNAME   0x0001  /* -n */
+#define ARG_PLAYERNAME 0x0002  /* -u */
+#define ARG_DATE       0x0004  /* -d */
+#define ARG_TIME       0x0008  /* -o */
+#define ARG_LOCATION   0x0010  /* -C */
+#define ARG_HOME       0x0020  /* -H */
+#define ARG_AWAY       0x0040  /* -A */
+#define ARG_GAMEID     0x0080  /* -G */
+#define ARG_POINTS     0x0100  /* -P */
+#define ARG_ASSISTS    0x0200  /* -S */
+#define ARG_REBOUNDS   0x0400  /* -R */
+#define ARG_MINUTES    0x0800 
 #define MODE_NONE        0
 #define MODE_ADDTEAM     1
 #define MODE_ADDPLAYER   2
@@ -24,6 +35,7 @@
 #define MODE_RECORDSTATS 4
 #define MODE_LISTSTATS   5
 #define MODE_DUMPJSON 6 
+unsigned int args_flag = 0;
 unsigned short host_flag = 0;
 unsigned short port_flag = 0;
 
@@ -66,7 +78,10 @@ void parseargs(int argc, char *argv[])
 {
     int opt;
 
-    while ((opt = getopt(argc, argv,"h:p:tbrlgj n:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
+    args_flag = 0;  /* reset for each run */
+
+    while ((opt = getopt(argc, argv,
+                         "h:p:tbrlgjn:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
     {
         switch (opt) {
             case 'h':
@@ -79,6 +94,7 @@ void parseargs(int argc, char *argv[])
                 port_number = optarg;
                 break;
 
+            /* modes */
             case 't':
                 mode = MODE_ADDTEAM;
                 break;
@@ -91,10 +107,10 @@ void parseargs(int argc, char *argv[])
                 mode = MODE_CREATEGAME;
                 break;
 
-	    case 'j':
-	        mode = MODE_DUMPJSON;
-	        break;
-		
+            case 'j':
+                mode = MODE_DUMPJSON;
+                break;
+
             case 'r':
                 mode = MODE_RECORDSTATS;
                 break;
@@ -102,53 +118,66 @@ void parseargs(int argc, char *argv[])
             case 'l':
                 mode = MODE_LISTSTATS;
                 break;
-		
-            case 'n':
+
+            /* arguments with values */
+            case 'n':   /* team name */
                 team_name = optarg;
+                args_flag |= ARG_TEAMNAME;
                 break;
 
-            case 'u':
+            case 'u':   /* player name */
                 player_name = optarg;
+                args_flag |= ARG_PLAYERNAME;
                 break;
 
-            case 'd':
+            case 'd':   /* date */
                 game_date = optarg;
+                args_flag |= ARG_DATE;
                 break;
 
-            case 'o':
+            case 'o':   /* time */
                 game_time = optarg;
+                args_flag |= ARG_TIME;
                 break;
 
-            case 'C':
+            case 'C':   /* location */
                 location = optarg;
+                args_flag |= ARG_LOCATION;
                 break;
 
-            case 'H':
+            case 'H':   /* home team */
                 home_team = optarg;
+                args_flag |= ARG_HOME;
                 break;
 
-            case 'A':
+            case 'A':   /* away team */
                 away_team = optarg;
+                args_flag |= ARG_AWAY;
                 break;
 
-            case 'G':
+            case 'G':   /* game id */
                 game_id = atoi(optarg);
+                args_flag |= ARG_GAMEID;
                 break;
 
-            case 'P':
+            case 'P':   /* points */
                 points = atoi(optarg);
+                args_flag |= ARG_POINTS;
                 break;
 
-            case 'S':
+            case 'S':   /* assists */
                 assists = atoi(optarg);
+                args_flag |= ARG_ASSISTS;
                 break;
 
-            case 'R':
+            case 'R':   /* rebounds */
                 rebounds = atoi(optarg);
+                args_flag |= ARG_REBOUNDS;
                 break;
 
-            case 'M':
+            case 'M':   /* minutes */
                 minutes = atoi(optarg);
+                args_flag |= ARG_MINUTES;
                 break;
 
             case '?':
@@ -156,7 +185,6 @@ void parseargs(int argc, char *argv[])
                 usage(argv[0]);
         }
     }
-
 
     if (host_flag == 0) {
         fprintf(stderr, "error: no hostname given\n");
@@ -167,81 +195,99 @@ void parseargs(int argc, char *argv[])
         usage(argv[0]);
     }
     if (mode == MODE_NONE) {
-        fprintf(stderr, "error: no mode given (-t|-b|-g|-r|-l)\n");
+        fprintf(stderr, "error: no mode given (-t|-b|-g|-r|-l|-j)\n");
         usage(argv[0]);
     }
 
+    unsigned int required;
+    unsigned int allowed  = 0;
 
     switch (mode) {
 
         case MODE_ADDTEAM:
-            if (team_name == NULL) {
+            required = ARG_TEAMNAME;
+            allowed  = ARG_TEAMNAME;
+            if ((args_flag & required) != required && args_flag & ~allowed) {
                 fprintf(stderr, "error: ADDTEAM (-t) requires -n team_name\n");
                 usage(argv[0]);
             }
-	    else{
-		  snprintf(message, BUFLEN, "ADDTEAM %s\n", team_name);
-	    }
+            snprintf(message, BUFLEN, "ADDTEAM %s\n", team_name);
             break;
 
         case MODE_ADDPLAYER:
-            if (team_name == NULL || player_name == NULL) {
+            required = ARG_TEAMNAME | ARG_PLAYERNAME;
+            allowed  = required;
+            if ((args_flag & required) != required && args_flag & ~allowed) {
                 fprintf(stderr,
                         "error: ADDPLAYER (-b) requires -n team_name and -u player_name\n");
                 usage(argv[0]);
             }
-	    else{
-	      snprintf(message, BUFLEN, "ADDPLAYER %s %s\n", team_name, player_name);
-	    }
+            snprintf(message, BUFLEN,
+                     "ADDPLAYER %s %s\n", team_name, player_name);
             break;
 
         case MODE_CREATEGAME:
-            if (!game_date || !game_time || !location || !home_team || !away_team) {
+            required = ARG_DATE | ARG_TIME | ARG_LOCATION | ARG_HOME | ARG_AWAY;
+            allowed  = required;
+            if ((args_flag & required) != required && args_flag & ~allowed) {
                 fprintf(stderr,
                         "error: CREATEGAME (-g) requires:\n"
                         "   -d date -o time -C location -H home_team -A away_team\n");
                 usage(argv[0]);
             }
-	    else{
-	      snprintf(message, BUFLEN, "CREATEGAME %s %s %s %s %s\n", game_date, game_time, location, home_team, away_team);
-	    }
+            snprintf(message, BUFLEN,
+                     "CREATEGAME %s %s %s %s %s\n",
+                     game_date, game_time, location, home_team, away_team);
             break;
 
         case MODE_RECORDSTATS:
-            if (game_id < 0 || !team_name || !player_name || !points || !assists || !rebounds || !minutes) {
+            required = ARG_GAMEID | ARG_TEAMNAME | ARG_PLAYERNAME |
+                       ARG_POINTS | ARG_ASSISTS | ARG_REBOUNDS | ARG_MINUTES;
+            allowed  = required;
+            if ((args_flag & required) != required && args_flag & ~allowed) {
                 fprintf(stderr,
                         "error: RECORDSTATS (-r) requires:\n"
-                        "   -G game_id -n team_name -u player_name\n");
+                        "   -G game_id -n team_name -u player_name "
+                        "-P points -S assists -R rebounds -M minutes\n");
                 usage(argv[0]);
             }
-	    else{
-	      snprintf(message, BUFLEN, "RECORDSTATS %u %s %s %u %u %u %u\n", game_id, team_name, player_name, points, assists, rebounds, minutes);
-	    }
-
+            snprintf(message, BUFLEN,
+                     "RECORDSTATS %u %s %s %u %u %u %u\n",
+                     game_id, team_name, player_name,
+                     points, assists, rebounds, minutes);
             break;
 
         case MODE_LISTSTATS:
-            if (!player_name && !team_name && game_id < 0) {
+            allowed = ARG_PLAYERNAME | ARG_TEAMNAME | ARG_GAMEID;
+            if (args_flag & ~allowed) {
                 fprintf(stderr,
-                        "error: LISTSTATS (-l) requires one of:\n"
-                        "   -u player_name OR -n team_name OR -G game_id\n");
+                        "error: LISTSTATS (-l) only accepts -u, -n, or -G (one of them)\n");
                 usage(argv[0]);
             }
-	    if(player_name){
-	      snprintf(message,BUFLEN,"LISTSTATS PLAYER %s\n",player_name);
-	    }
-	    else if(team_name){
-	      snprintf(message,BUFLEN,"LISTSTATS TEAM %s\n",team_name);
-	    }
-	    else{
-	      snprintf(message,BUFLEN,"LISTSTATS GAME %u\n", game_id);
-	    }
+
+            if (args_flag & ARG_PLAYERNAME) {
+                snprintf(message, BUFLEN,
+                         "LISTSTATS PLAYER %s\n", player_name);
+            } else if (args_flag & ARG_TEAMNAME) {
+                snprintf(message, BUFLEN,
+                         "LISTSTATS TEAM %s\n", team_name);
+            } else {
+                snprintf(message, BUFLEN,
+                         "LISTSTATS GAME %u\n", game_id);
+            }
             break;
-	 case MODE_DUMPJSON:
+
+        case MODE_DUMPJSON:
+            if (args_flag != 0) {
+                fprintf(stderr,
+                        "error: DUMPJSON (-j) does not take any additional arguments\n");
+                usage(argv[0]);
+            }
             snprintf(message, BUFLEN, "DUMPJSON\n");
             break;
     }
 }
+
 
 int main (int argc, char *argv [])
 {
