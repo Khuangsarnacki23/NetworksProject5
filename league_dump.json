@@ -2,18 +2,19 @@
   "teams": [
     "Cavs",
     "Lakers",
-    "Timberwolves"
+    "Mavs"
   ],
   "players": [
     { "team": "Cavs", "name": "Darius_Garland" },
-    { "team": "Cavs", "name": "Evan_Mobley" },
-    { "team": "Timberwolves", "name": "Anthony_Edwards" }
+    { "team": "Cavs", "name": "Evan_Mobley" }
   ],
   "games": [
-    { "id": 0, "date": "2025-03-11", "time": "19:00", "location": "Cleveland", "home_team": "Cavs", "away_team": "Lakers" }
+    { "id": 0, "date": "2025-03-11", "time": "19:00", "location": "Cleveland", "home_team": "Cavs", "away_team": "Lakers" },
+    { "id": 1, "date": "2025-03-12", "time": "19:00", "location": "Cleveland", "home_team": "Cavs", "away_team": "Lakers" }
   ],
   "stats": [
     { "game_id": 0, "team": "Cavs", "player": "Darius_Garland", "points": 32, "assists": 10, "rebounds": 5, "minutes": 38 },
-    { "game_id": 0, "team": "Cavs", "player": "Evan_Mobley", "points": 22, "assists": 14, "rebounds": 2, "minutes": 40 }
+    { "game_id": 0, "team": "Cavs", "player": "Evan_Mobley", "points": 22, "assists": 14, "rebounds": 2, "minutes": 40 },
+    { "game_id": 1, "team": "Cavs", "player": "Evan_Mobley", "points": 2, "assists": 14, "rebounds": 2, "minutes": 40 }
   ]
 }
