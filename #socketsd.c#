@@ -293,7 +293,7 @@ int write_json_files() {
     }
     fprintf(f, "\n  ],\n");
 
-    fprintf(f, "  \"players\": [\n");
+le    fprintf(f, "  \"players\": [\n");
     first = 1;
     for (int t = 0; t < MAX_TEAMS; t++) {
         if (team[t] == NULL) continue;
@@ -433,7 +433,6 @@ void handle_client(int sd2) {
         if      (strcmp(arg1, "PLAYER") == 0) ListStats_player(sd2, arg2);
         else if (strcmp(arg1, "TEAM")   == 0) ListStats_team(sd2, arg2);
         else if (strcmp(arg1, "GAME")   == 0) ListStats_game(sd2, atoi(arg2));
-        else send_line(sd2, "ERR LISTSTATS_MODE\n");
     }
     else if (strcmp(cmd, "DUMPJSON") == 0) {
         int s = write_json_files();
