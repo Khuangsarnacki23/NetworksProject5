@@ -16,7 +16,14 @@
 #define MAX_PLAYERS 18
 #define MAX_GAMES   64
 #define MAX_STATS   512
-
+#define RES_OK               0
+#define RES_EXISTS           1
+#define RES_TEAM_NOT_FOUND   2
+#define RES_PLAYER_NOT_FOUND 3
+#define RES_FULL             4
+#define RES_GAME_NOT_FOUND   5
+#define RES_STATS_FULL       6
+#define TRUE 0
 char *port_number = NULL;
 
 char *team[MAX_TEAMS];
@@ -271,11 +278,6 @@ void ListStats_game(int sd2, int game_id) {
 
 int write_json_files() {
     FILE *f = fopen("league_dump.json", "w");
-    if (!f) {
-        perror("fopen league_dump.json");
-        return -1;
-    }
-
     fprintf(f, "{\n");
 
     fprintf(f, "  \"teams\": [\n");
@@ -366,7 +368,6 @@ void handle_client(int sd2) {
     char buf[BUFLEN];
     char cmd[32], arg1[128], arg2[128], arg3[128], arg4[128], arg5[128], arg6[128], arg7[128];
     ssize_t n;
-    int num;
 
     memset(buf, 0, sizeof(buf));
     n = read(sd2, buf, BUFLEN - 1);
@@ -375,31 +376,26 @@ void handle_client(int sd2) {
 
     printf("C -> S: %s", buf);
 
-    num = sscanf(buf,
-                 "%31s %127s %127s %127s %127s %127s %127s %127s",
-                 cmd, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-
-
-    if (num == 2 && strcmp(cmd, "ADDTEAM") == 0) {
+    if (strcmp(cmd, "ADDTEAM") == 0) {
         int s = Register_team(arg1);
         if (s == 0)      send_line(sd2, "OK TEAM_ADDED\n");
         else if (s == 1) send_line(sd2, "ERR TEAM_EXISTS\n");
         else             send_line(sd2, "ERR TEAM_FULL\n");
     }
-    else if (num == 3 && strcmp(cmd, "ADDPLAYER") == 0) {
+    else if (strcmp(cmd, "ADDPLAYER") == 0) {
         int s = Register_player(arg2, arg1);
         if (s == 0)      send_line(sd2, "OK PLAYER_ADDED\n");
         else if (s == 1) send_line(sd2, "ERR PLAYER_EXISTS\n");
         else if (s == 2) send_line(sd2, "ERR TEAM_NOT_FOUND\n");
         else             send_line(sd2, "ERR PLAYER_FULL\n");
     }
-    else if (num == 6 && strcmp(cmd, "CREATEGAME") == 0) {
+    else if (strcmp(cmd, "CREATEGAME") == 0) {
         int s = Create_game(arg1, arg2, arg3, arg4, arg5);
         if (s == 0)      send_line(sd2, "OK GAME_CREATED\n");
         else if (s == 2) send_line(sd2, "ERR TEAM_NOT_FOUND\n");
         else             send_line(sd2, "ERR GAME_FULL\n");
     }
-    else if (num == 8 && strcmp(cmd, "RECORDSTATS") == 0) {
+    else if (strcmp(cmd, "RECORDSTATS") == 0) {
         int game_id  = atoi(arg1);
         int points   = atoi(arg4);
         int assists  = atoi(arg5);
@@ -414,13 +410,13 @@ void handle_client(int sd2) {
         else if (s == 3) send_line(sd2, "ERR PLAYER_NOT_FOUND\n");
         else             send_line(sd2, "ERR STATS_FULL\n");
     }
-    else if (num >= 3 && strcmp(cmd, "LISTSTATS") == 0) {
+    else if (strcmp(cmd, "LISTSTATS") == 0) {
         if      (strcmp(arg1, "PLAYER") == 0) ListStats_player(sd2, arg2);
         else if (strcmp(arg1, "TEAM")   == 0) ListStats_team(sd2, arg2);
         else if (strcmp(arg1, "GAME")   == 0) ListStats_game(sd2, atoi(arg2));
         else send_line(sd2, "ERR LISTSTATS_MODE\n");
     }
-    else if (num == 1 && strcmp(cmd, "DUMPJSON") == 0) {
+    else if (strcmp(cmd, "DUMPJSON") == 0) {
     if (write_json_files() == 0) {
         send_line(sd2, "OK JSON_WRITTEN\n");
     } else {
@@ -461,7 +457,7 @@ int main(int argc, char *argv[]) {
 
     printf("Server listening on port %s...\n", port_number);
 
-    for (;;) {
+    while (TRUE) {
         addrlen = sizeof(addr);
         sd2 = accept(sd, &addr, &addrlen);
         if (sd2 < 0) continue;
