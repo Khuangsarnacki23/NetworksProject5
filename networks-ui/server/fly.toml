@@ -1,0 +1,20 @@
+# Fly.io config for socketsd — exposes raw TCP (not HTTP) on port 4642.
+# Usage:
+#   cd server && fly launch --no-deploy --copy-config --name <your-app-name>
+#   fly deploy
+# Then use <your-app-name>.fly.dev : 4642 in the UI.
+app = "my-socketsd"
+primary_region = "iad"
+
+[build]
+
+[[services]]
+  internal_port = 4642
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 4642
+
+  [[services.tcp_checks]]
+    interval = "30s"
+    timeout = "5s"

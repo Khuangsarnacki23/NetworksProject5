@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Networks Projects — Router Lab</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
+    --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --red: #f85149;
+    --term-bg: #010409; --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+  header { padding: 20px 28px 0; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header p { color: var(--muted); font-size: 13px; margin: 4px 0 14px; }
+  nav { display: flex; gap: 4px; }
+  nav button {
+    background: none; border: none; color: var(--muted); padding: 10px 16px; font-size: 14px;
+    cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 28px 60px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .desc { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+  .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 180px; flex: 1; }
+  .field label { font-size: 12px; color: var(--muted); }
+  select, input[type=text], input[type=number] {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px 10px; font-size: 14px; font-family: inherit;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--accent); }
+  .modes { display: flex; gap: 8px; flex-wrap: wrap; }
+  .modes button {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px;
+    padding: 7px 14px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .modes button.sel { border-color: var(--accent); background: rgba(88,166,255,.12); color: var(--accent); }
+  .cmdbar { display: flex; gap: 10px; align-items: center; }
+  .cmd {
+    flex: 1; background: var(--term-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 12px; font-family: var(--mono); font-size: 13px; color: var(--green); overflow-x: auto; white-space: nowrap;
+  }
+  .cmd::before { content: "$ "; color: var(--muted); }
+  .runbtn {
+    background: var(--green); color: #04120a; border: none; border-radius: 6px; padding: 9px 22px;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .runbtn:disabled { opacity: .5; cursor: default; }
+  .term {
+    background: var(--term-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: pre-wrap;
+    max-height: 420px; overflow-y: auto; min-height: 90px; word-break: break-all;
+  }
+  .term .err { color: var(--red); }
+  .term .meta { color: var(--muted); }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
+  .badge.wasm { background: rgba(88,166,255,.15); color: var(--accent); }
+  .badge.tcp { background: rgba(63,185,80,.15); color: var(--green); }
+  .note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  .note code { font-family: var(--mono); background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+  h2 { font-size: 17px; margin-bottom: 6px; }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Networks Projects — Router Lab</h1>
+  <p>CSDS 325 projects in one UI. Projects 1–3 run as WebAssembly in your browser; Project 5 speaks real TCP to a live server.</p>
+  <nav id="nav"></nav>
+</header>
+<main id="main"></main>
+<script type="module" src="/assets/app.js"></script>
+</body>
+</html>
