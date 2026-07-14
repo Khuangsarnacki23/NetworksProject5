@@ -3,79 +3,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Networks Projects — Router Lab</title>
+<title>Router Lab — Kai's Networks Projects</title>
 <style>
   :root {
-    --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
-    --muted: #8b949e; --accent: #58a6ff; --green: #3fb950; --red: #f85149;
-    --term-bg: #010409; --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --paper: #faf7f2; --ink: #2b2620; --soft: #6f675c; --line: #e6dfd3;
+    --card: #ffffff; --accent: #2f6f6a; --accent-dark: #245550; --accent-soft: #e3efee;
+    --gold: #b98a2f; --gold-soft: #f6edd9; --rust: #b0472e;
+    --term-bg: #26221c; --term-text: #efe9dd;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --serif: Georgia, "Times New Roman", serif;
   }
   * { box-sizing: border-box; margin: 0; }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
-  header { padding: 20px 28px 0; border-bottom: 1px solid var(--border); }
-  header h1 { font-size: 20px; font-weight: 600; }
-  header p { color: var(--muted); font-size: 13px; margin: 4px 0 14px; }
-  nav { display: flex; gap: 4px; }
-  nav button {
-    background: none; border: none; color: var(--muted); padding: 10px 16px; font-size: 14px;
-    cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit;
-  }
-  nav button:hover { color: var(--text); }
-  nav button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
-  main { max-width: 980px; margin: 0 auto; padding: 24px 28px 60px; }
+  body { background: var(--paper); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ---- header ---- */
+  .topbar { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .topbar-inner { max-width: 1020px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 22px; }
+  .logo { display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none; color: var(--ink); }
+  .logo-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--accent); color: #fff; display: grid; place-items: center; font-family: var(--serif); font-size: 19px; font-weight: 700; }
+  .logo b { font-family: var(--serif); font-size: 18px; letter-spacing: .01em; }
+  .topnav { margin-left: auto; display: flex; gap: 2px; flex-wrap: wrap; }
+  .topnav a { padding: 8px 13px; border-radius: 8px; font-size: 13.5px; color: var(--soft); text-decoration: none; cursor: pointer; }
+  .topnav a:hover { background: var(--accent-soft); color: var(--accent-dark); }
+  .topnav a.active { background: var(--accent); color: #fff; }
+
+  main { flex: 1; width: 100%; max-width: 1020px; margin: 0 auto; padding: 30px 24px 70px; }
   .view { display: none; }
-  .view.active { display: block; }
-  .desc { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 16px; }
-  .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 12px; }
-  .row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
-  .field { display: flex; flex-direction: column; gap: 5px; min-width: 180px; flex: 1; }
-  .field label { font-size: 12px; color: var(--muted); }
+  .view.active { display: block; animation: rise .25s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+  /* ---- homepage ---- */
+  .hero { text-align: center; padding: 44px 10px 34px; }
+  .hero h1 { font-family: var(--serif); font-size: 42px; line-height: 1.15; font-weight: 700; }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { max-width: 620px; margin: 16px auto 0; color: var(--soft); font-size: 16.5px; line-height: 1.65; }
+  .hero .hint { margin-top: 26px; font-size: 13px; color: var(--gold); background: var(--gold-soft); display: inline-block; padding: 7px 16px; border-radius: 999px; }
+
+  .projgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 26px; }
+  .projcard { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 20px 18px; cursor: pointer; text-align: left; font-family: inherit; transition: transform .15s ease, box-shadow .15s ease, border-color .15s; box-shadow: 0 1px 2px rgba(43,38,32,.05); }
+  .projcard:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(43,38,32,.10); border-color: var(--accent); }
+  .projcard .num { font-family: var(--serif); font-size: 13px; color: var(--gold); letter-spacing: .12em; text-transform: uppercase; }
+  .projcard h3 { font-family: var(--serif); font-size: 19px; margin: 6px 0 8px; }
+  .projcard p { font-size: 13.5px; color: var(--soft); line-height: 1.55; }
+  .projcard .go { margin-top: 14px; font-size: 13px; color: var(--accent-dark); font-weight: 600; }
+
+  .featrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 40px; }
+  .feat { padding: 4px 6px; }
+  .feat h4 { font-size: 14.5px; margin-bottom: 5px; }
+  .feat p { font-size: 13px; color: var(--soft); line-height: 1.55; }
+
+  /* ---- project pages ---- */
+  .crumb { font-size: 13px; color: var(--soft); margin-bottom: 14px; }
+  .crumb a { color: var(--accent-dark); cursor: pointer; text-decoration: none; }
+  .crumb a:hover { text-decoration: underline; }
+  .pagehead h2 { font-family: var(--serif); font-size: 28px; }
+  .pagehead .tagline { color: var(--soft); font-size: 14.5px; line-height: 1.6; margin: 8px 0 24px; max-width: 700px; }
+  .badge { display: inline-block; font-size: 11.5px; padding: 3px 11px; border-radius: 999px; margin-left: 10px; vertical-align: 4px; font-weight: 600; }
+  .badge.wasm { background: var(--accent-soft); color: var(--accent-dark); }
+  .badge.tcp { background: var(--gold-soft); color: var(--gold); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(43,38,32,.04); }
+  .card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--soft); margin-bottom: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 200px; flex: 1; }
+  .field label { font-size: 12.5px; color: var(--soft); font-weight: 600; }
   select, input[type=text], input[type=number] {
-    background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
-    padding: 7px 10px; font-size: 14px; font-family: inherit;
+    background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 9px;
+    padding: 9px 11px; font-size: 14px; font-family: inherit;
   }
-  select:focus, input:focus { outline: none; border-color: var(--accent); }
+  select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .filedesc { font-size: 12.5px; color: var(--soft); line-height: 1.5; min-height: 18px; }
+  .peek { align-self: flex-start; background: none; border: 1px solid var(--line); color: var(--accent-dark); border-radius: 8px; padding: 5px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .peek:hover { background: var(--accent-soft); border-color: var(--accent); }
+
   .modes { display: flex; gap: 8px; flex-wrap: wrap; }
   .modes button {
-    background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px;
-    padding: 7px 14px; font-size: 13px; cursor: pointer; font-family: inherit;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink); border-radius: 999px;
+    padding: 8px 17px; font-size: 13.5px; cursor: pointer; font-family: inherit;
   }
-  .modes button.sel { border-color: var(--accent); background: rgba(88,166,255,.12); color: var(--accent); }
-  .cmdbar { display: flex; gap: 10px; align-items: center; }
-  .cmd {
-    flex: 1; background: var(--term-bg); border: 1px solid var(--border); border-radius: 6px;
-    padding: 9px 12px; font-family: var(--mono); font-size: 13px; color: var(--green); overflow-x: auto; white-space: nowrap;
-  }
-  .cmd::before { content: "$ "; color: var(--muted); }
-  .runbtn {
-    background: var(--green); color: #04120a; border: none; border-radius: 6px; padding: 9px 22px;
-    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
-  }
+  .modes button:hover { border-color: var(--accent); }
+  .modes button.sel { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 600; }
+
+  .cmdbar { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+  .cmd { flex: 1; background: var(--term-bg); border-radius: 9px; padding: 10px 13px; font-family: var(--mono); font-size: 13px; color: #9fd6a8; overflow-x: auto; white-space: nowrap; }
+  .cmd::before { content: "$ "; color: #8a8375; }
+  .runbtn { background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 10px 26px; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .runbtn:hover { background: var(--accent-dark); }
   .runbtn:disabled { opacity: .5; cursor: default; }
-  .term {
-    background: var(--term-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px;
-    font-family: var(--mono); font-size: 12.5px; line-height: 1.5; white-space: pre-wrap;
-    max-height: 420px; overflow-y: auto; min-height: 90px; word-break: break-all;
-  }
-  .term .err { color: var(--red); }
-  .term .meta { color: var(--muted); }
-  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
-  .badge.wasm { background: rgba(88,166,255,.15); color: var(--accent); }
-  .badge.tcp { background: rgba(63,185,80,.15); color: var(--green); }
-  .note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
-  .note code { font-family: var(--mono); background: var(--panel); padding: 1px 5px; border-radius: 4px; }
-  h2 { font-size: 17px; margin-bottom: 6px; }
+
+  .term { background: var(--term-bg); color: var(--term-text); border-radius: 10px; padding: 15px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; max-height: 420px; overflow-y: auto; min-height: 88px; word-break: break-all; }
+  .term .err { color: #f2a196; }
+  .term .meta { color: #8a8375; }
+  .note { font-size: 12.5px; color: var(--soft); margin-top: 10px; line-height: 1.6; }
+  .note code { font-family: var(--mono); background: var(--gold-soft); padding: 1px 6px; border-radius: 5px; font-size: 11.5px; }
   input[type=file] { display: none; }
+
+  footer { border-top: 1px solid var(--line); padding: 20px 24px; text-align: center; font-size: 12.5px; color: var(--soft); }
 </style>
 </head>
 <body>
-<header>
-  <h1>Networks Projects — Router Lab</h1>
-  <p>CSDS 325 projects in one UI. Projects 1–3 run as WebAssembly in your browser; Project 5 speaks real TCP to a live server.</p>
-  <nav id="nav"></nav>
-</header>
+<div class="topbar"><div class="topbar-inner">
+  <a class="logo" data-nav="home"><span class="logo-mark">R</span><b>Router Lab</b></a>
+  <nav class="topnav" id="nav"></nav>
+</div></div>
 <main id="main"></main>
+<footer>Built from Kai's CSDS 325 C projects — compiled to WebAssembly &amp; run untouched. Project 5 talks to a live socketsd server over real TCP.</footer>
 <script type="module" src="/assets/app.js"></script>
 </body>
 </html>
