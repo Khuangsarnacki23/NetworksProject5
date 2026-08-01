@@ -10,6 +10,7 @@ RUN gcc -O2 -Wall -o socketsd socketsd.c
 
 FROM debian:bookworm-slim
 WORKDIR /app
+COPY --from=build /etc/protocols /etc/protocols
 COPY --from=build /src/socketsd .
 EXPOSE 4642
 CMD ["./socketsd", "-p", "4642"]
