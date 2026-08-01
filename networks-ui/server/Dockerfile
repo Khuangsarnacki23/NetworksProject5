@@ -10,6 +10,7 @@ RUN gcc -O2 -Wall -o socketsd socketsd.c
 
 FROM debian:bookworm-slim
 WORKDIR /app
+# slim images lack /etc/protocols, which getprotobyname("tcp") needs
 COPY --from=build /etc/protocols /etc/protocols
 COPY --from=build /src/socketsd .
 EXPOSE 4642

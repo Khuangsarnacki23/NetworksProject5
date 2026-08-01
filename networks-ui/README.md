@@ -1,15 +1,15 @@
-# Networks Projects — Router Lab UI
+# Router Lab
 
-One UI for all four CSDS 325 C projects. No code was changed — the originals are compiled as-is.
+Four networking tools written in C, in one web UI. No code was changed — the originals are compiled as-is.
 
 | View | Program | How it runs |
 |---|---|---|
-| Project 1 | `proj1` (IPv4 lists, `-p`/`-s`) | WebAssembly, in your browser |
-| Project 2 | `proj2` (forwarding sim, `-p`/`-r`/`-s`) | WebAssembly, in your browser |
-| Project 3 | `proj3` (NetFlow/RTT, `-p`/`-n`/`-r`) | WebAssembly, in your browser |
-| Project 5 | `sockets` → `socketsd` | Real static C binary in a Vercel function, real TCP to your server |
+| IPv4 Address Auditor | `proj1` (IPv4 lists, `-p`/`-s`) | WebAssembly, in your browser |
+| Packet Forwarding Engine | `proj2` (forwarding sim, `-p`/`-r`/`-s`) | WebAssembly, in your browser |
+| Traffic Analyzer | `proj3` (NetFlow/RTT, `-p`/`-n`/`-r`) | WebAssembly, in your browser |
+| League Stats Manager | `sockets` → `socketsd` | Real static C binary in a Vercel function, real TCP to a live server |
 
-Each view lets you pick bundled sample files (or upload your own), shows the exact CLI command, and runs it. Project 3's `demo.trace` is synthetic (the course samples lived on the class server) — upload real traces for real data.
+Each view decodes and previews the selected input file live, shows the exact CLI command being executed, and runs it. `demo.trace` is synthetic — upload real captures for real data.
 
 ## Deploy the UI to Vercel (~2 min)
 
@@ -23,7 +23,7 @@ Or push this folder to a GitHub repo and import it at vercel.com/new. No build s
 
 Local preview with the API working: `npx vercel dev`
 
-## Deploy socketsd (needed only for the Project 5 view)
+## Deploy socketsd (needed only for the League Stats Manager)
 
 The server needs a public raw-TCP port, which Vercel can't host. Two easy options:
 
@@ -42,7 +42,7 @@ gcc -O2 -o socketsd socketsd.c
 ```
 Open inbound TCP 4642 in the security group; use the instance's public DNS in the UI.
 
-## How Project 5 stays "real sockets"
+## How the League Stats Manager stays "real sockets"
 
 `api/_bin/sockets` is your unmodified `sockets.c` compiled as a fully static
 x86_64 musl binary (`zig cc -target x86_64-linux-musl -static`). The

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Router Lab — Kai's Networks Projects</title>
+<title>Router Lab — networking tools by Kai</title>
 <style>
   :root {
     --paper: #faf7f2; --ink: #2b2620; --soft: #6f675c; --line: #e6dfd3;
@@ -18,7 +18,7 @@
 
   /* ---- header ---- */
   .topbar { background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
-  .topbar-inner { max-width: 1020px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 22px; }
+  .topbar-inner { max-width: 1060px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 22px; }
   .logo { display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none; color: var(--ink); }
   .logo-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--accent); color: #fff; display: grid; place-items: center; font-family: var(--serif); font-size: 19px; font-weight: 700; }
   .logo b { font-family: var(--serif); font-size: 18px; letter-spacing: .01em; }
@@ -27,7 +27,7 @@
   .topnav a:hover { background: var(--accent-soft); color: var(--accent-dark); }
   .topnav a.active { background: var(--accent); color: #fff; }
 
-  main { flex: 1; width: 100%; max-width: 1020px; margin: 0 auto; padding: 30px 24px 70px; }
+  main { flex: 1; width: 100%; max-width: 1060px; margin: 0 auto; padding: 30px 24px 70px; }
   .view { display: none; }
   .view.active { display: block; animation: rise .25s ease; }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
@@ -36,8 +36,7 @@
   .hero { text-align: center; padding: 44px 10px 34px; }
   .hero h1 { font-family: var(--serif); font-size: 42px; line-height: 1.15; font-weight: 700; }
   .hero h1 em { color: var(--accent); font-style: normal; }
-  .hero p { max-width: 620px; margin: 16px auto 0; color: var(--soft); font-size: 16.5px; line-height: 1.65; }
-  .hero .hint { margin-top: 26px; font-size: 13px; color: var(--gold); background: var(--gold-soft); display: inline-block; padding: 7px 16px; border-radius: 999px; }
+  .hero p { max-width: 640px; margin: 16px auto 0; color: var(--soft); font-size: 16.5px; line-height: 1.65; }
 
   .projgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 26px; }
   .projcard { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 20px 18px; cursor: pointer; text-align: left; font-family: inherit; transition: transform .15s ease, box-shadow .15s ease, border-color .15s; box-shadow: 0 1px 2px rgba(43,38,32,.05); }
@@ -52,12 +51,12 @@
   .feat h4 { font-size: 14.5px; margin-bottom: 5px; }
   .feat p { font-size: 13px; color: var(--soft); line-height: 1.55; }
 
-  /* ---- project pages ---- */
+  /* ---- tool pages ---- */
   .crumb { font-size: 13px; color: var(--soft); margin-bottom: 14px; }
   .crumb a { color: var(--accent-dark); cursor: pointer; text-decoration: none; }
   .crumb a:hover { text-decoration: underline; }
   .pagehead h2 { font-family: var(--serif); font-size: 28px; }
-  .pagehead .tagline { color: var(--soft); font-size: 14.5px; line-height: 1.6; margin: 8px 0 24px; max-width: 700px; }
+  .pagehead .tagline { color: var(--soft); font-size: 14.5px; line-height: 1.6; margin: 8px 0 24px; max-width: 720px; }
   .badge { display: inline-block; font-size: 11.5px; padding: 3px 11px; border-radius: 999px; margin-left: 10px; vertical-align: 4px; font-weight: 600; }
   .badge.wasm { background: var(--accent-soft); color: var(--accent-dark); }
   .badge.tcp { background: var(--gold-soft); color: var(--gold); }
@@ -73,8 +72,6 @@
   }
   select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .filedesc { font-size: 12.5px; color: var(--soft); line-height: 1.5; min-height: 18px; }
-  .peek { align-self: flex-start; background: none; border: 1px solid var(--line); color: var(--accent-dark); border-radius: 8px; padding: 5px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
-  .peek:hover { background: var(--accent-soft); border-color: var(--accent); }
 
   .modes { display: flex; gap: 8px; flex-wrap: wrap; }
   .modes button {
@@ -84,14 +81,18 @@
   .modes button:hover { border-color: var(--accent); }
   .modes button.sel { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 600; }
 
-  .cmdbar { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
-  .cmd { flex: 1; background: var(--term-bg); border-radius: 9px; padding: 10px 13px; font-family: var(--mono); font-size: 13px; color: #9fd6a8; overflow-x: auto; white-space: nowrap; }
-  .cmd::before { content: "$ "; color: #8a8375; }
-  .runbtn { background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 10px 26px; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .runbtn { background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 10px 26px; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
   .runbtn:hover { background: var(--accent-dark); }
   .runbtn:disabled { opacity: .5; cursor: default; }
 
-  .term { background: var(--term-bg); color: var(--term-text); border-radius: 10px; padding: 15px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; max-height: 420px; overflow-y: auto; min-height: 88px; word-break: break-all; }
+  /* input preview | output side-by-side */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .duo { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-shadow: 0 1px 2px rgba(43,38,32,.04); display: flex; flex-direction: column; }
+  .panel h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--soft); margin-bottom: 10px; }
+  .cmdline { background: var(--term-bg); border-radius: 8px 8px 0 0; padding: 8px 12px; font-family: var(--mono); font-size: 12px; color: #9fd6a8; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid #3a352c; }
+  .cmdline::before { content: "$ "; color: #8a8375; }
+  .term { background: var(--term-bg); color: var(--term-text); border-radius: 0 0 8px 8px; padding: 13px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; overflow-y: auto; min-height: 120px; max-height: 380px; word-break: break-all; flex: 1; }
   .term .err { color: #f2a196; }
   .term .meta { color: #8a8375; }
   .note { font-size: 12.5px; color: var(--soft); margin-top: 10px; line-height: 1.6; }
@@ -107,7 +108,7 @@
   <nav class="topnav" id="nav"></nav>
 </div></div>
 <main id="main"></main>
-<footer>Built from Kai's CSDS 325 C projects — compiled to WebAssembly &amp; run untouched. Project 5 talks to a live socketsd server over real TCP.</footer>
+<footer>A personal project by Kai — four networking tools written in C, running live: three compiled to WebAssembly, one speaking real TCP to a live server.</footer>
 <script type="module" src="/assets/app.js"></script>
 </body>
 </html>
