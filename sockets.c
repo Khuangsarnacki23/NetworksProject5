@@ -34,7 +34,10 @@
 #define MODE_CREATEGAME  3
 #define MODE_RECORDSTATS 4
 #define MODE_LISTSTATS   5
-#define MODE_DUMPJSON 6 
+#define MODE_DUMPJSON 6
+#define MODE_LISTTEAMS   7
+#define MODE_LISTPLAYERS 8
+#define MODE_LISTGAMES   9
 unsigned int args_flag = 0;
 unsigned short host_flag = 0;
 unsigned short port_flag = 0;
@@ -80,7 +83,7 @@ void parseargs(int argc, char *argv[])
     args_flag = 0;
 
     while ((opt = getopt(argc, argv,
-                         "h:p:tbrlgjn:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
+                         "h:p:tbrlgjaein:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
     {
         switch (opt) {
             case 'h':
@@ -108,6 +111,15 @@ void parseargs(int argc, char *argv[])
                 break;
             case 'l':
                 mode = MODE_LISTSTATS;
+                break;
+            case 'a':
+                mode = MODE_LISTTEAMS;
+                break;
+            case 'e':
+                mode = MODE_LISTPLAYERS;
+                break;
+            case 'i':
+                mode = MODE_LISTGAMES;
                 break;
             case 'n':
                 team_name = optarg;
@@ -225,6 +237,24 @@ void parseargs(int argc, char *argv[])
             if (args_flag != 0) usage(argv[0]);
             snprintf(message, BUFLEN, "DUMPJSON\n");
             break;
+
+        case MODE_LISTTEAMS:
+            if (args_flag != 0) usage(argv[0]);
+            snprintf(message, BUFLEN, "LISTTEAMS\n");
+            break;
+
+        case MODE_LISTPLAYERS:
+            required = ARG_TEAMNAME;
+            allowed  = ARG_TEAMNAME;
+            if ((args_flag & required) != required || (args_flag & ~allowed))
+                usage(argv[0]);
+            snprintf(message, BUFLEN, "LISTPLAYERS %s\n", team_name);
+            break;
+
+        case MODE_LISTGAMES:
+            if (args_flag != 0) usage(argv[0]);
+            snprintf(message, BUFLEN, "LISTGAMES\n");
+            break;
     }
 }
 
@@ -280,6 +310,26 @@ int main (int argc, char *argv [])
     }
       else if (strncmp(rcv_buffer, "ERR ", 4) == 0) {
         printf("Server reported an error: %s", rcv_buffer + 4);
+    }
+      else if (strncmp(rcv_buffer, "TEAMNAME ", 9) == 0) {
+        printf("Team: %s", rcv_buffer + 9);
+    }
+      else if (strncmp(rcv_buffer, "ROSTER ", 7) == 0) {
+        char tn[64], pn[64];
+        if (sscanf(rcv_buffer, "ROSTER %63s %63s", tn, pn) == 2)
+            printf("%s plays for %s.\n", pn, tn);
+        else
+            printf("%s", rcv_buffer);
+    }
+      else if (strncmp(rcv_buffer, "GAME ", 5) == 0) {
+        int gid;
+        char gd[32], gt[32], gloc[128], ghome[64], gaway[64];
+        if (sscanf(rcv_buffer, "GAME %d %31s %31s %127s %63s %63s",
+                   &gid, gd, gt, gloc, ghome, gaway) == 6)
+            printf("Game %d: %s vs %s at %s on %s %s.\n",
+                   gid, ghome, gaway, gloc, gd, gt);
+        else
+            printf("%s", rcv_buffer);
     }
       else if (strncmp(rcv_buffer, "STAT ", 5) == 0) {
         int game_id, pts, ast, reb, min;

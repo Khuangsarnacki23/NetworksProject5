@@ -9,7 +9,7 @@ const path = require("node:path");
 const SERVER_HOST = process.env.SOCKETSD_HOST || "network-5-kaizilla.fly.dev";
 const SERVER_PORT = process.env.SOCKETSD_PORT || "4642";
 
-const MODES = new Set(["-t", "-b", "-g", "-r", "-l", "-j"]);
+const MODES = new Set(["-t", "-b", "-g", "-r", "-l", "-j", "-a", "-e", "-i"]);
 const FIELD_FLAGS = new Set(["n", "u", "d", "o", "C", "H", "A", "G", "P", "S", "R", "M"]);
 
 let binPath = null;

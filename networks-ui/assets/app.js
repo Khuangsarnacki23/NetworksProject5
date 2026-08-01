@@ -62,7 +62,10 @@ const SAMPLE_INFO = {
   "ex1.trace":  "A single packet (245.242.77.29 → 6.0.187.43).",
   "ex10.trace": "20 packets from one conversation — pair with ex10.tbl.",
   "ex11.trace": "11 packets across several destinations — pair with ex11.tbl.",
-  "demo.trace": "Synthetic capture: 60 TCP/UDP packets between 5 hosts, 49 flows. Upload your own captures for real data.",
+  "demo.trace": "Mixed traffic: 60 TCP/UDP packets between 5 hosts, 49 flows.",
+  "web.trace": "Web browsing: 25 HTTPS request/response pairs from 3 clients — the one to use for round-trip times.",
+  "dns.trace": "DNS lookups: 80 UDP query/response packets to 8.8.8.8 and 1.1.1.1. (RTT mode is TCP-only, so it stays empty here — by design.)",
+  "bulk.trace": "One big download: a 45-packet TCP stream with periodic ACKs — NetFlow collapses it to just 2 flows.",
 };
 
 function describeFile(name) {
@@ -118,37 +121,44 @@ function wasmView(spec) {
   const state = {};
   const view = h("section", { class: "view", id: `view-${spec.id}` });
 
-  // input preview panel
-  const inCmd = h("div", { class: "cmdline" });
-  const inTerm = h("div", { class: "term" });
+  // input preview panel (one block per previewed file)
+  const inWrap = h("div");
   // output panel
   const outCmd = h("div", { class: "cmdline" });
   const outTerm = h("div", { class: "term" }, h("span", { class: "meta" }, "Hit Run to execute the command above on the selected input."));
 
   const updateOutCmd = () => { outCmd.textContent = `./${spec.binary} ${spec.buildArgs(state).display}`; };
 
-  /* Live input preview: whenever a file is picked, decode it with the tool's
-     own print mode and show the contents immediately. */
+  /* Live input preview: whenever a file is picked, decode every input file
+     with the tool's own print modes and show the contents immediately. */
   async function previewFile() {
-    const f = spec.previewOf(state);
-    if (!f) return;
-    const { ref, args, argsDisplay } = f;
-    inCmd.textContent = argsDisplay;
-    setTerm(inTerm, [{ class: "meta", text: `decoding ${ref.name}…` }]);
-    try {
-      const bytes = await bytesFor(spec.project, ref);
-      const res = await runWasm(spec.binary, args, { [ref.name]: bytes });
-      const lines = res.out.split("\n").filter((l, i, a) => !(l === "" && i === a.length - 1));
-      const shown = lines.slice(0, PREVIEW_LINES).join("\n");
-      const content = [
-        { class: "meta", text: `${describeFile(ref.name)}\n\n` },
-        shown || "(no printable records)",
-      ];
-      if (lines.length > PREVIEW_LINES)
-        content.push({ class: "meta", text: `\n… ${lines.length - PREVIEW_LINES} more lines (run to see everything)` });
-      setTerm(inTerm, content);
-    } catch (e) {
-      setTerm(inTerm, [{ class: "err", text: `could not decode: ${e.message}` }]);
+    const items = spec.previews(state).filter(Boolean);
+    if (!items.length) return;
+    inWrap.textContent = "";
+    const maxLines = items.length > 1 ? 10 : PREVIEW_LINES;
+    for (const it of items) {
+      const cmd = h("div", { class: "cmdline" });
+      cmd.textContent = it.argsDisplay;
+      const term = h("div", { class: "term" });
+      if (items.length > 1)
+        inWrap.append(h("div", { class: "filedesc", style: "font-weight:600;margin:10px 0 4px;color:var(--ink)" }, it.title));
+      inWrap.append(cmd, term);
+      setTerm(term, [{ class: "meta", text: `decoding ${it.ref.name}…` }]);
+      try {
+        const bytes = await bytesFor(spec.project, it.ref);
+        const res = await runWasm(spec.binary, it.args, { [it.ref.name]: bytes });
+        const lines = res.out.split("\n").filter((l, i, a) => !(l === "" && i === a.length - 1));
+        const shown = lines.slice(0, maxLines).join("\n");
+        const content = [
+          { class: "meta", text: `${describeFile(it.ref.name)}\n\n` },
+          shown || "(no printable records)",
+        ];
+        if (lines.length > maxLines)
+          content.push({ class: "meta", text: `\n… ${lines.length - maxLines} more lines (run to see everything)` });
+        setTerm(term, content);
+      } catch (e) {
+        setTerm(term, [{ class: "err", text: `could not decode: ${e.message}` }]);
+      }
     }
   }
 
@@ -215,8 +225,8 @@ function wasmView(spec) {
       h("p", { class: "note" }, "These are binary formats — a text editor shows gibberish. The left panel below decodes whatever you select, live, using the tool's own print mode.")),
     h("div", { class: "duo" },
       h("div", { class: "panel" },
-        h("h3", {}, "Inside the selected file"),
-        inCmd, inTerm),
+        h("h3", {}, "Inside the selected file" + (spec.files.length > 1 ? "s" : "")),
+        inWrap),
       h("div", { class: "panel" },
         h("h3", {}, "Output ", runBtn),
         outCmd, outTerm)),
@@ -241,11 +251,11 @@ const addressAuditor = wasmView({
     key: "list", label: "Address list (-r)",
     samples: ["sample-C.list","sample-A.list","sample-B.list","sample-D.list","sample-G.list","sample-E.list","sample-F.list"],
   }],
-  previewOf: s => s.list && {
-    ref: s.list,
+  previews: s => [s.list && {
+    title: "Address list", ref: s.list,
     args: ["-p", "-r", `/data/${s.list.name}`],
     argsDisplay: `./proj1 -p -r ${s.list.name}`,
-  },
+  }],
   buildArgs: s => ({ display: `${s.mode} -r ${s.list?.name ?? ""}` }),
   resolve: async s => ({
     argv: [s.mode, "-r", `/data/${s.list.name}`],
@@ -267,12 +277,18 @@ const forwardingEngine = wasmView({
     { key: "tbl", label: "Forwarding table (-f)", samples: ["ex11.tbl","ex10.tbl","ex6.tbl"] },
     { key: "trace", label: "Packet trace (-t)", samples: ["ex11.trace","ex10.trace","ex1.trace"] },
   ],
-  previewOf: s => {
-    // preview follows whatever the current mode consumes: table for -r, trace otherwise
-    if (s.mode === "-r" && s.tbl) return { ref: s.tbl, args: ["-r", "-f", `/data/${s.tbl.name}`], argsDisplay: `./proj2 -r -f ${s.tbl.name}` };
-    if (s.trace) return { ref: s.trace, args: ["-p", "-t", `/data/${s.trace.name}`], argsDisplay: `./proj2 -p -t ${s.trace.name}` };
-    return null;
-  },
+  previews: s => [
+    s.tbl && {
+      title: "Forwarding table", ref: s.tbl,
+      args: ["-r", "-f", `/data/${s.tbl.name}`],
+      argsDisplay: `./proj2 -r -f ${s.tbl.name}`,
+    },
+    s.trace && {
+      title: "Packet trace", ref: s.trace,
+      args: ["-p", "-t", `/data/${s.trace.name}`],
+      argsDisplay: `./proj2 -p -t ${s.trace.name}`,
+    },
+  ],
   buildArgs: s => {
     if (s.mode === "-p") return { display: `-p -t ${s.trace?.name ?? ""}` };
     if (s.mode === "-r") return { display: `-r -f ${s.tbl?.name ?? ""}` };
@@ -296,12 +312,12 @@ const trafficAnalyzer = wasmView({
     { flag: "-n", label: "NetFlow flows" },
     { flag: "-r", label: "Round-trip times" },
   ],
-  files: [{ key: "trace", label: "Binary capture (-f)", samples: ["demo.trace"] }],
-  previewOf: s => s.trace && {
-    ref: s.trace,
+  files: [{ key: "trace", label: "Binary capture (-f)", samples: ["web.trace", "demo.trace", "dns.trace", "bulk.trace"] }],
+  previews: s => [s.trace && {
+    title: "Binary capture", ref: s.trace,
     args: ["-f", `/data/${s.trace.name}`, "-p"],
     argsDisplay: `./proj3 -f ${s.trace.name} -p`,
-  },
+  }],
   buildArgs: s => ({ display: `-f ${s.trace?.name ?? ""} ${s.mode}` }),
   resolve: async s => ({
     argv: ["-f", `/data/${s.trace.name}`, s.mode],
@@ -324,11 +340,15 @@ function leagueView() {
     "-g": [["d", "Date (-d)"], ["o", "Time (-o)"], ["C", "Location (-C)"], ["H", "Home team (-H)"], ["A", "Away team (-A)"]],
     "-r": [["G", "Game ID (-G)"], ["n", "Team (-n)"], ["u", "Player (-u)"], ["P", "Points (-P)"], ["S", "Assists (-S)"], ["R", "Rebounds (-R)"], ["M", "Minutes (-M)"]],
     "-l": [["u", "Player (-u), or leave blank"], ["n", "Team (-n), or leave blank"], ["G", "Game ID (-G), or leave blank"]],
+    "-a": [],
+    "-e": [["n", "Team name (-n)"]],
+    "-i": [],
     "-j": [],
   };
   const MODES = [
     { flag: "-t", label: "Add a team" }, { flag: "-b", label: "Add a player" }, { flag: "-g", label: "Create a game" },
-    { flag: "-r", label: "Record stats" }, { flag: "-l", label: "Look up stats" }, { flag: "-j", label: "Dump JSON" },
+    { flag: "-r", label: "Record stats" }, { flag: "-a", label: "List all teams" }, { flag: "-e", label: "Team roster" },
+    { flag: "-i", label: "List games" }, { flag: "-l", label: "Look up stats" }, { flag: "-j", label: "Dump JSON" },
   ];
 
   const fieldWrap = h("div", { class: "row" });
@@ -342,7 +362,13 @@ function leagueView() {
       inputs[flag] = inp;
       fieldWrap.append(h("div", { class: "field" }, h("label", {}, label), inp));
     }
-    if (!FIELDS[state.mode].length) fieldWrap.append(h("p", { class: "note" }, "No extra arguments needed — the server writes everything it knows to league_dump.json."));
+    if (!FIELDS[state.mode].length) {
+      const blurb = state.mode === "-j"
+        ? "No extra arguments — the server streams everything it knows back as JSON (and saves league_dump.json on its side)."
+        : state.mode === "-a" ? "No extra arguments — lists every registered team."
+        : "No extra arguments — lists every scheduled game.";
+      fieldWrap.append(h("p", { class: "note" }, blurb));
+    }
   }
 
   function currentArgs() {

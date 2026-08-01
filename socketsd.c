@@ -276,6 +276,68 @@ void ListStats_game(int sd2, int game_id) {
         send_line(sd2, "ERR NO_STATS_FOR_GAME\n");
 }
 
+void List_teams(int sd2) {
+    int i, found = 0;
+    char line[BUFLEN];
+
+    for (i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] != NULL) {
+            snprintf(line, sizeof(line), "TEAMNAME %s\n", team[i]);
+            send_line(sd2, line);
+            found = 1;
+        }
+    }
+    if (!found)
+        send_line(sd2, "ERR NO_TEAMS\n");
+}
+
+void List_players(int sd2, const char *team_name) {
+    int i, j, team_idx = -1, found = 0;
+    char line[BUFLEN];
+
+    for (i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] != NULL && strcmp(team[i], team_name) == 0) {
+            team_idx = i;
+            break;
+        }
+    }
+    if (team_idx == -1) {
+        send_line(sd2, "ERR TEAM_NOT_FOUND\n");
+        return;
+    }
+
+    for (j = 0; j < MAX_PLAYERS; j++) {
+        if (players[j][team_idx] != NULL) {
+            snprintf(line, sizeof(line), "ROSTER %s %s\n",
+                     team_name, players[j][team_idx]);
+            send_line(sd2, line);
+            found = 1;
+        }
+    }
+    if (!found)
+        send_line(sd2, "ERR NO_PLAYERS_ON_TEAM\n");
+}
+
+void List_games(int sd2) {
+    int i;
+    char line[BUFLEN];
+
+    if (game_count == 0) {
+        send_line(sd2, "ERR NO_GAMES\n");
+        return;
+    }
+    for (i = 0; i < game_count; i++) {
+        snprintf(line, sizeof(line), "GAME %d %s %s %s %s %s\n",
+                 games[i].game_id,
+                 games[i].date,
+                 games[i].time,
+                 games[i].location,
+                 games[i].home_team,
+                 games[i].away_team);
+        send_line(sd2, line);
+    }
+}
+
 int write_json_files() {
     FILE *f = fopen("league_dump.json", "w");
     if (!f) return RES_STATS_FULL;
@@ -435,10 +497,29 @@ void handle_client(int sd2) {
         else if (strcmp(arg1, "GAME")   == 0) ListStats_game(sd2, atoi(arg2));
         else send_line(sd2, "ERR LISTSTATS_MODE\n");
     }
+    else if (strcmp(cmd, "LISTTEAMS") == 0) {
+        List_teams(sd2);
+    }
+    else if (strcmp(cmd, "LISTPLAYERS") == 0) {
+        List_players(sd2, arg1);
+    }
+    else if (strcmp(cmd, "LISTGAMES") == 0) {
+        List_games(sd2);
+    }
     else if (strcmp(cmd, "DUMPJSON") == 0) {
         int s = write_json_files();
-        if (s == RES_OK) send_line(sd2, "OK JSON_WRITTEN\n");
-        else             send_line(sd2, "ERR JSON_WRITE_FAILED\n");
+        if (s == RES_OK) {
+            /* stream the JSON back to the client, then confirm */
+            FILE *jf = fopen("league_dump.json", "r");
+            char jline[BUFLEN];
+            if (jf) {
+                while (fgets(jline, sizeof(jline), jf) != NULL)
+                    send_line(sd2, jline);
+                fclose(jf);
+            }
+            send_line(sd2, "OK JSON_WRITTEN\n");
+        }
+        else send_line(sd2, "ERR JSON_WRITE_FAILED\n");
     }
     else {
         send_line(sd2, "ERR UNKNOWN_COMMAND_OR_ARGS\n");
