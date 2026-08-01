@@ -38,6 +38,7 @@
 #define MODE_LISTTEAMS   7
 #define MODE_LISTPLAYERS 8
 #define MODE_LISTGAMES   9
+#define MODE_SEEDSEASON 10
 unsigned int args_flag = 0;
 unsigned short host_flag = 0;
 unsigned short port_flag = 0;
@@ -83,7 +84,7 @@ void parseargs(int argc, char *argv[])
     args_flag = 0;
 
     while ((opt = getopt(argc, argv,
-                         "h:p:tbrlgjaein:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
+                         "h:p:tbrlgjaeizn:u:d:o:C:H:A:G:P:S:R:M:")) != -1)
     {
         switch (opt) {
             case 'h':
@@ -120,6 +121,9 @@ void parseargs(int argc, char *argv[])
                 break;
             case 'i':
                 mode = MODE_LISTGAMES;
+                break;
+            case 'z':
+                mode = MODE_SEEDSEASON;
                 break;
             case 'n':
                 team_name = optarg;
@@ -255,6 +259,11 @@ void parseargs(int argc, char *argv[])
             if (args_flag != 0) usage(argv[0]);
             snprintf(message, BUFLEN, "LISTGAMES\n");
             break;
+
+        case MODE_SEEDSEASON:
+            if (args_flag != 0) usage(argv[0]);
+            snprintf(message, BUFLEN, "SEEDSEASON\n");
+            break;
     }
 }
 
@@ -310,6 +319,15 @@ int main (int argc, char *argv [])
     }
       else if (strncmp(rcv_buffer, "ERR ", 4) == 0) {
         printf("Server reported an error: %s", rcv_buffer + 4);
+    }
+      else if (strncmp(rcv_buffer, "OK SEASON_SEEDED", 16) == 0) {
+        int st_t, st_p, st_g, st_s;
+        if (sscanf(rcv_buffer, "OK SEASON_SEEDED %d %d %d %d",
+                   &st_t, &st_p, &st_g, &st_s) == 4)
+            printf("Last season loaded: %d teams, %d players, %d games, %d stat lines.\n",
+                   st_t, st_p, st_g, st_s);
+        else
+            printf("Last season loaded.\n");
     }
       else if (strncmp(rcv_buffer, "TEAMNAME ", 9) == 0) {
         printf("Team: %s", rcv_buffer + 9);

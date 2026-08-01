@@ -276,6 +276,170 @@ void ListStats_game(int sd2, int game_id) {
         send_line(sd2, "ERR NO_STATS_FOR_GAME\n");
 }
 
+/* ---- hardcoded 2025-26 NBA regular season seed data ---- */
+
+static const char *seed_teams[] = {
+    "Hawks","Celtics","Nets","Hornets","Bulls","Cavaliers","Mavericks","Nuggets",
+    "Pistons","Warriors","Rockets","Pacers","Clippers","Lakers","Grizzlies","Heat",
+    "Bucks","Timberwolves","Pelicans","Knicks","Thunder","Magic","76ers","Suns",
+    "Blazers","Kings","Spurs","Raptors","Jazz","Wizards"
+};
+
+static const char *seed_players[][2] = {
+    {"Hawks","Trae_Young"},{"Hawks","Jalen_Johnson"},{"Hawks","Dyson_Daniels"},{"Hawks","Zaccharie_Risacher"},
+    {"Hawks","Onyeka_Okongwu"},{"Hawks","Kristaps_Porzingis"},{"Hawks","Luke_Kennard"},{"Hawks","Vit_Krejci"},
+    {"Celtics","Jayson_Tatum"},{"Celtics","Jaylen_Brown"},{"Celtics","Derrick_White"},{"Celtics","Payton_Pritchard"},
+    {"Celtics","Anfernee_Simons"},{"Celtics","Sam_Hauser"},{"Celtics","Neemias_Queta"},{"Celtics","Josh_Minott"},
+    {"Nets","Michael_Porter_Jr"},{"Nets","Nic_Claxton"},{"Nets","Cam_Thomas"},{"Nets","Egor_Demin"},
+    {"Nets","Terance_Mann"},{"Nets","DayRon_Sharpe"},{"Nets","Ziaire_Williams"},{"Nets","Noah_Clowney"},
+    {"Hornets","LaMelo_Ball"},{"Hornets","Brandon_Miller"},{"Hornets","Miles_Bridges"},{"Hornets","Kon_Knueppel"},
+    {"Hornets","Collin_Sexton"},{"Hornets","Josh_Green"},{"Hornets","Tre_Mann"},{"Hornets","Moussa_Diabate"},
+    {"Bulls","Josh_Giddey"},{"Bulls","Coby_White"},{"Bulls","Nikola_Vucevic"},{"Bulls","Matas_Buzelis"},
+    {"Bulls","Patrick_Williams"},{"Bulls","Ayo_Dosunmu"},{"Bulls","Kevin_Huerter"},{"Bulls","Isaac_Okoro"},
+    {"Cavaliers","Donovan_Mitchell"},{"Cavaliers","Darius_Garland"},{"Cavaliers","Evan_Mobley"},{"Cavaliers","Jarrett_Allen"},
+    {"Cavaliers","DeAndre_Hunter"},{"Cavaliers","Max_Strus"},{"Cavaliers","Sam_Merrill"},{"Cavaliers","Lonzo_Ball"},
+    {"Mavericks","Cooper_Flagg"},{"Mavericks","Anthony_Davis"},{"Mavericks","Kyrie_Irving"},{"Mavericks","Klay_Thompson"},
+    {"Mavericks","PJ_Washington"},{"Mavericks","Daniel_Gafford"},{"Mavericks","Dereck_Lively"},{"Mavericks","DAngelo_Russell"},
+    {"Nuggets","Nikola_Jokic"},{"Nuggets","Jamal_Murray"},{"Nuggets","Aaron_Gordon"},{"Nuggets","Christian_Braun"},
+    {"Nuggets","Cameron_Johnson"},{"Nuggets","Tim_Hardaway_Jr"},{"Nuggets","Bruce_Brown"},{"Nuggets","Jonas_Valanciunas"},
+    {"Pistons","Cade_Cunningham"},{"Pistons","Jalen_Duren"},{"Pistons","Jaden_Ivey"},{"Pistons","Ausar_Thompson"},
+    {"Pistons","Tobias_Harris"},{"Pistons","Isaiah_Stewart"},{"Pistons","Duncan_Robinson"},{"Pistons","Caris_LeVert"},
+    {"Warriors","Stephen_Curry"},{"Warriors","Jimmy_Butler"},{"Warriors","Draymond_Green"},{"Warriors","Brandin_Podziemski"},
+    {"Warriors","Jonathan_Kuminga"},{"Warriors","Buddy_Hield"},{"Warriors","Moses_Moody"},{"Warriors","Al_Horford"},
+    {"Rockets","Kevin_Durant"},{"Rockets","Alperen_Sengun"},{"Rockets","Amen_Thompson"},{"Rockets","Jabari_Smith"},
+    {"Rockets","Reed_Sheppard"},{"Rockets","Fred_VanVleet"},{"Rockets","Steven_Adams"},{"Rockets","Dorian_Finney-Smith"},
+    {"Pacers","Tyrese_Haliburton"},{"Pacers","Pascal_Siakam"},{"Pacers","Andrew_Nembhard"},{"Pacers","Bennedict_Mathurin"},
+    {"Pacers","Aaron_Nesmith"},{"Pacers","TJ_McConnell"},{"Pacers","Obi_Toppin"},{"Pacers","Jarace_Walker"},
+    {"Clippers","Kawhi_Leonard"},{"Clippers","James_Harden"},{"Clippers","Ivica_Zubac"},{"Clippers","Bradley_Beal"},
+    {"Clippers","John_Collins"},{"Clippers","Derrick_Jones"},{"Clippers","Brook_Lopez"},{"Clippers","Chris_Paul"},
+    {"Lakers","LeBron_James"},{"Lakers","Luka_Doncic"},{"Lakers","Austin_Reaves"},{"Lakers","Rui_Hachimura"},
+    {"Lakers","Deandre_Ayton"},{"Lakers","Marcus_Smart"},{"Lakers","Jarred_Vanderbilt"},{"Lakers","Gabe_Vincent"},
+    {"Grizzlies","Ja_Morant"},{"Grizzlies","Jaren_Jackson_Jr"},{"Grizzlies","Zach_Edey"},{"Grizzlies","Santi_Aldama"},
+    {"Grizzlies","Jaylen_Wells"},{"Grizzlies","Cedric_Coward"},{"Grizzlies","Ty_Jerome"},{"Grizzlies","Brandon_Clarke"},
+    {"Heat","Bam_Adebayo"},{"Heat","Tyler_Herro"},{"Heat","Norman_Powell"},{"Heat","Andrew_Wiggins"},
+    {"Heat","Davion_Mitchell"},{"Heat","Kelel_Ware"},{"Heat","Nikola_Jovic"},{"Heat","Pelle_Larsson"},
+    {"Bucks","Giannis_Antetokounmpo"},{"Bucks","Myles_Turner"},{"Bucks","Kyle_Kuzma"},{"Bucks","Bobby_Portis"},
+    {"Bucks","Kevin_Porter_Jr"},{"Bucks","Gary_Trent_Jr"},{"Bucks","AJ_Green"},{"Bucks","Ryan_Rollins"},
+    {"Timberwolves","Anthony_Edwards"},{"Timberwolves","Julius_Randle"},{"Timberwolves","Rudy_Gobert"},{"Timberwolves","Jaden_McDaniels"},
+    {"Timberwolves","Naz_Reid"},{"Timberwolves","Donte_DiVincenzo"},{"Timberwolves","Mike_Conley"},{"Timberwolves","Terrence_Shannon_Jr"},
+    {"Pelicans","Zion_Williamson"},{"Pelicans","Trey_Murphy"},{"Pelicans","Herbert_Jones"},{"Pelicans","Dejounte_Murray"},
+    {"Pelicans","Jordan_Poole"},{"Pelicans","Derik_Queen"},{"Pelicans","Jeremiah_Fears"},{"Pelicans","Yves_Missi"},
+    {"Knicks","Jalen_Brunson"},{"Knicks","Karl-Anthony_Towns"},{"Knicks","OG_Anunoby"},{"Knicks","Mikal_Bridges"},
+    {"Knicks","Josh_Hart"},{"Knicks","Mitchell_Robinson"},{"Knicks","Miles_McBride"},{"Knicks","Guerschon_Yabusele"},
+    {"Thunder","Shai_Gilgeous-Alexander"},{"Thunder","Jalen_Williams"},{"Thunder","Chet_Holmgren"},{"Thunder","Luguentz_Dort"},
+    {"Thunder","Isaiah_Hartenstein"},{"Thunder","Alex_Caruso"},{"Thunder","Cason_Wallace"},{"Thunder","Aaron_Wiggins"},
+    {"Magic","Paolo_Banchero"},{"Magic","Franz_Wagner"},{"Magic","Desmond_Bane"},{"Magic","Jalen_Suggs"},
+    {"Magic","Wendell_Carter_Jr"},{"Magic","Anthony_Black"},{"Magic","Tyus_Jones"},{"Magic","Jonathan_Isaac"},
+    {"76ers","Joel_Embiid"},{"76ers","Tyrese_Maxey"},{"76ers","Paul_George"},{"76ers","VJ_Edgecombe"},
+    {"76ers","Jared_McCain"},{"76ers","Quentin_Grimes"},{"76ers","Andre_Drummond"},{"76ers","Kelly_Oubre"},
+    {"Suns","Devin_Booker"},{"Suns","Jalen_Green"},{"Suns","Dillon_Brooks"},{"Suns","Grayson_Allen"},
+    {"Suns","Mark_Williams"},{"Suns","Ryan_Dunn"},{"Suns","Royce_ONeale"},{"Suns","Khaman_Maluach"},
+    {"Blazers","Damian_Lillard"},{"Blazers","Scoot_Henderson"},{"Blazers","Shaedon_Sharpe"},{"Blazers","Deni_Avdija"},
+    {"Blazers","Toumani_Camara"},{"Blazers","Donovan_Clingan"},{"Blazers","Jerami_Grant"},{"Blazers","Jrue_Holiday"},
+    {"Kings","Domantas_Sabonis"},{"Kings","Zach_LaVine"},{"Kings","DeMar_DeRozan"},{"Kings","Malik_Monk"},
+    {"Kings","Keegan_Murray"},{"Kings","Dennis_Schroder"},{"Kings","Keon_Ellis"},{"Kings","Nique_Clifford"},
+    {"Spurs","Victor_Wembanyama"},{"Spurs","DeAaron_Fox"},{"Spurs","Dylan_Harper"},{"Spurs","Stephon_Castle"},
+    {"Spurs","Devin_Vassell"},{"Spurs","Jeremy_Sochan"},{"Spurs","Julian_Champagnie"},{"Spurs","Luke_Kornet"},
+    {"Raptors","Scottie_Barnes"},{"Raptors","Brandon_Ingram"},{"Raptors","RJ_Barrett"},{"Raptors","Immanuel_Quickley"},
+    {"Raptors","Jakob_Poeltl"},{"Raptors","Gradey_Dick"},{"Raptors","JaKobe_Walter"},{"Raptors","Collin_Murray-Boyles"},
+    {"Jazz","Lauri_Markkanen"},{"Jazz","Walker_Kessler"},{"Jazz","Keyonte_George"},{"Jazz","Ace_Bailey"},
+    {"Jazz","Isaiah_Collier"},{"Jazz","Taylor_Hendricks"},{"Jazz","Brice_Sensabaugh"},{"Jazz","Kyle_Filipowski"},
+    {"Wizards","Alex_Sarr"},{"Wizards","Bilal_Coulibaly"},{"Wizards","Kyshawn_George"},{"Wizards","Tre_Johnson"},
+    {"Wizards","CJ_McCollum"},{"Wizards","Khris_Middleton"},{"Wizards","Corey_Kispert"},{"Wizards","Bub_Carrington"}
+};
+
+typedef struct { const char *date, *time, *loc, *home, *away; } SeedGame;
+static const SeedGame seed_games[] = {
+    {"2025-10-21","19:30","Paycom_Center","Thunder","Rockets"},
+    {"2025-10-21","22:00","Crypto_Arena","Lakers","Warriors"},
+    {"2025-10-22","19:00","Madison_Square_Garden","Knicks","Cavaliers"},
+    {"2025-10-22","19:30","Frost_Bank_Center","Spurs","Mavericks"},
+    {"2025-10-24","19:00","TD_Garden","Celtics","76ers"},
+    {"2025-10-25","20:00","Fiserv_Forum","Bucks","Raptors"},
+    {"2025-11-01","19:00","Kia_Center","Magic","Hawks"},
+    {"2025-11-05","20:00","United_Center","Bulls","Pistons"},
+    {"2025-11-08","19:00","Barclays_Center","Nets","Hornets"},
+    {"2025-11-12","20:00","Target_Center","Timberwolves","Kings"},
+    {"2025-11-15","19:00","Smoothie_King_Center","Pelicans","Grizzlies"},
+    {"2025-11-19","22:00","Moda_Center","Blazers","Jazz"},
+    {"2025-11-22","19:00","Capital_One_Arena","Wizards","Heat"},
+    {"2025-11-26","21:00","Ball_Arena","Nuggets","Clippers"},
+    {"2025-11-29","19:00","Gainbridge_Fieldhouse","Pacers","Bulls"},
+    {"2025-12-05","19:30","Toyota_Center","Rockets","Suns"},
+    {"2025-12-25","12:00","Madison_Square_Garden","Knicks","Cavaliers"},
+    {"2025-12-25","14:30","Paycom_Center","Thunder","Spurs"},
+    {"2025-12-25","17:00","Chase_Center","Warriors","Mavericks"},
+    {"2025-12-25","20:00","Crypto_Arena","Lakers","Rockets"},
+    {"2025-12-25","22:30","Target_Center","Timberwolves","Nuggets"},
+    {"2026-01-03","19:00","Intuit_Dome","Clippers","Kings"},
+    {"2026-01-10","19:00","State_Farm_Arena","Hawks","Hornets"},
+    {"2026-01-15","19:00","Scotiabank_Arena","Raptors","Nets"},
+    {"2026-01-19","15:00","FedEx_Forum","Grizzlies","Jazz"},
+    {"2026-01-24","19:30","Wells_Fargo_Center","76ers","Wizards"}
+};
+
+typedef struct { int game_id; const char *team, *player; int pts, ast, reb, min; } SeedStat;
+static const SeedStat seed_stats[] = {
+    {0,"Thunder","Shai_Gilgeous-Alexander",35,5,4,44}, {0,"Thunder","Chet_Holmgren",22,2,11,38}, {0,"Rockets","Alperen_Sengun",27,6,12,41}, {0,"Rockets","Kevin_Durant",23,4,7,39},
+    {1,"Lakers","Austin_Reaves",26,9,5,37}, {1,"Warriors","Jimmy_Butler",31,4,5,36}, {1,"Warriors","Stephen_Curry",23,5,3,34},
+    {2,"Knicks","Jalen_Brunson",34,7,3,38}, {2,"Knicks","Karl-Anthony_Towns",19,2,11,35}, {2,"Cavaliers","Donovan_Mitchell",31,5,4,37},
+    {3,"Spurs","Victor_Wembanyama",40,2,15,36}, {3,"Mavericks","Anthony_Davis",22,3,13,35}, {3,"Mavericks","Cooper_Flagg",10,4,10,32},
+    {4,"Celtics","Jaylen_Brown",25,6,7,36}, {4,"76ers","Tyrese_Maxey",40,6,4,40},
+    {5,"Bucks","Giannis_Antetokounmpo",31,7,14,35}, {5,"Raptors","Scottie_Barnes",22,8,9,37},
+    {6,"Magic","Paolo_Banchero",28,5,8,36}, {6,"Hawks","Trae_Young",24,12,3,35},
+    {7,"Bulls","Coby_White",27,5,4,34}, {7,"Pistons","Cade_Cunningham",33,10,6,38},
+    {8,"Nets","Michael_Porter_Jr",28,2,9,35}, {8,"Hornets","LaMelo_Ball",30,8,6,36},
+    {9,"Timberwolves","Anthony_Edwards",38,4,6,37}, {9,"Kings","Zach_LaVine",27,3,4,35},
+    {10,"Pelicans","Zion_Williamson",29,5,8,33}, {10,"Grizzlies","Ja_Morant",32,9,4,36},
+    {11,"Blazers","Shaedon_Sharpe",30,3,5,36}, {11,"Blazers","Deni_Avdija",26,6,9,37}, {11,"Jazz","Lauri_Markkanen",31,2,8,36},
+    {12,"Wizards","Alex_Sarr",24,3,11,34}, {12,"Heat","Tyler_Herro",29,6,5,36},
+    {13,"Nuggets","Nikola_Jokic",36,12,16,38}, {13,"Clippers","James_Harden",26,10,5,37},
+    {14,"Pacers","Pascal_Siakam",30,4,8,36}, {14,"Bulls","Josh_Giddey",25,10,8,37},
+    {15,"Rockets","Kevin_Durant",34,5,6,38}, {15,"Suns","Devin_Booker",33,7,4,38},
+    {16,"Knicks","Jalen_Brunson",37,6,4,39}, {16,"Cavaliers","Darius_Garland",25,8,3,36},
+    {17,"Thunder","Shai_Gilgeous-Alexander",33,6,5,38}, {17,"Spurs","Victor_Wembanyama",28,3,12,37},
+    {18,"Warriors","Stephen_Curry",38,6,5,37}, {18,"Mavericks","Cooper_Flagg",24,5,9,38},
+    {19,"Lakers","Luka_Doncic",35,11,9,39}, {19,"Lakers","LeBron_James",27,8,7,36}, {19,"Rockets","Alperen_Sengun",24,6,10,38},
+    {20,"Timberwolves","Anthony_Edwards",36,5,6,38}, {20,"Nuggets","Nikola_Jokic",31,10,14,37},
+    {21,"Clippers","Kawhi_Leonard",30,4,6,35}, {21,"Kings","Domantas_Sabonis",22,7,14,36},
+    {22,"Hawks","Trae_Young",32,11,3,36}, {22,"Hornets","Brandon_Miller",27,4,6,36},
+    {23,"Raptors","Brandon_Ingram",29,5,6,36}, {23,"Nets","Cam_Thomas",33,4,3,35},
+    {24,"Grizzlies","Ja_Morant",28,7,5,34}, {24,"Jazz","Keyonte_George",26,8,3,36},
+    {25,"76ers","Joel_Embiid",39,4,12,36}, {25,"76ers","Tyrese_Maxey",31,7,4,38}, {25,"Wizards","Bilal_Coulibaly",19,5,6,35}
+};
+
+void Seed_season(int sd2) {
+    char line[BUFLEN];
+    int i, t = 0, p = 0, g = 0, s = 0;
+
+    /* refuse to seed a league that already has data - keeps repeat
+       clicks (or curious users) from piling entries onto the server */
+    for (i = 0; i < MAX_TEAMS; i++) {
+        if (team[i] != NULL) {
+            send_line(sd2, "ERR LEAGUE_NOT_EMPTY\n");
+            return;
+        }
+    }
+
+    for (i = 0; i < (int)(sizeof(seed_teams) / sizeof(seed_teams[0])); i++)
+        if (Register_team(seed_teams[i]) == RES_OK) t++;
+
+    for (i = 0; i < (int)(sizeof(seed_players) / sizeof(seed_players[0])); i++)
+        if (Register_player(seed_players[i][1], seed_players[i][0]) == RES_OK) p++;
+
+    for (i = 0; i < (int)(sizeof(seed_games) / sizeof(seed_games[0])); i++)
+        if (Create_game(seed_games[i].date, seed_games[i].time, seed_games[i].loc,
+                        seed_games[i].home, seed_games[i].away) == RES_OK) g++;
+
+    for (i = 0; i < (int)(sizeof(seed_stats) / sizeof(seed_stats[0])); i++)
+        if (Record_stats(seed_stats[i].player, seed_stats[i].team, seed_stats[i].game_id,
+                         seed_stats[i].pts, seed_stats[i].ast, seed_stats[i].reb,
+                         seed_stats[i].min) == RES_OK) s++;
+
+    snprintf(line, sizeof(line), "OK SEASON_SEEDED %d %d %d %d\n", t, p, g, s);
+    send_line(sd2, line);
+}
+
 void List_teams(int sd2) {
     int i, found = 0;
     char line[BUFLEN];
@@ -496,6 +660,9 @@ void handle_client(int sd2) {
         else if (strcmp(arg1, "TEAM")   == 0) ListStats_team(sd2, arg2);
         else if (strcmp(arg1, "GAME")   == 0) ListStats_game(sd2, atoi(arg2));
         else send_line(sd2, "ERR LISTSTATS_MODE\n");
+    }
+    else if (strcmp(cmd, "SEEDSEASON") == 0) {
+        Seed_season(sd2);
     }
     else if (strcmp(cmd, "LISTTEAMS") == 0) {
         List_teams(sd2);

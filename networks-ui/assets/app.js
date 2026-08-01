@@ -390,6 +390,39 @@ function leagueView() {
   const modes = modeButtons(MODES, state, () => { renderFields(); updateCmd(); });
   const runBtn = h("button", { class: "runbtn", onclick: run }, "Send ▸");
 
+  /* --- one-shot season seeding --- */
+  const seedBtn = h("button", { class: "runbtn", onclick: seed }, "Generate Last Season ▸");
+  const seedNote = h("p", { class: "note" },
+    "Loads the 2025–26 NBA regular season in one shot: all 30 teams, 8-man rosters, and a 26-game marquee slate (opening week, Christmas Day and more) with star stat lines. One TCP connection total — and the server refuses to seed twice, so this can only ever run once.");
+  function markSeeded() {
+    seedBtn.disabled = true;
+    seedBtn.textContent = "Season already loaded ✓";
+    localStorage.setItem("seeded26", "1");
+  }
+  if (localStorage.getItem("seeded26")) markSeeded();
+  async function seed() {
+    seedBtn.disabled = true;
+    setTerm(term, [{ class: "meta", text: "seeding last season over one TCP connection…" }]);
+    try {
+      const r = await fetch("/api/sockets", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "-z" }),
+      });
+      const j = await r.json();
+      if (j.error) { setTerm(term, [{ class: "err", text: `error: ${j.error}` }]); seedBtn.disabled = false; return; }
+      cmdEl.textContent = j.command;
+      const content = [];
+      if (j.stdout) content.push(j.stdout);
+      if (j.stderr) content.push({ class: "err", text: j.stderr });
+      content.push({ class: "meta", text: `\n[exit code ${j.exitCode}]` });
+      setTerm(term, content);
+      if (j.stdout.includes("Last season loaded") || j.stdout.includes("LEAGUE_NOT_EMPTY")) markSeeded();
+      else seedBtn.disabled = false;
+    } catch (e) {
+      setTerm(term, [{ class: "err", text: `request failed: ${e.message}` }]);
+      seedBtn.disabled = false;
+    }
+  }
+
   async function run() {
     const a = currentArgs();
     runBtn.disabled = true;
@@ -419,6 +452,9 @@ function leagueView() {
     h("div", { class: "pagehead" },
       h("h2", {}, "League Stats Manager", h("span", { class: "badge tcp" }, "live TCP server")),
       h("p", { class: "tagline" }, "A client/server pair speaking a custom text protocol over raw TCP. The compiled C client runs on the backend and talks to a live league server — register teams and players, schedule games, record box scores, query stats. Every button press below is a real socket connection.")),
+    h("div", { class: "card" },
+      h("h3", {}, "Start with last season"),
+      h("div", { class: "row", style: "align-items:center" }, seedBtn), seedNote),
     h("div", { class: "card" },
       h("h3", {}, "Build a command"),
       modes, h("div", { style: "height:14px" }), fieldWrap),
