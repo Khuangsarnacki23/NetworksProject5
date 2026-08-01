@@ -285,7 +285,7 @@ function proj5View() {
   const cmdEl = h("div", { class: "cmd" });
   const state = { mode: "-t" };
 
-  const host = h("input", { type: "text", placeholder: "e.g. my-socketsd.fly.dev", value: localStorage.getItem("p5host") || "" });
+  const host = h("input", { type: "text", placeholder: "e.g. my-socketsd.fly.dev", value: localStorage.getItem("p5host") || "network-5-kaizilla.fly.dev" });
   const port = h("input", { type: "number", placeholder: "4642", value: localStorage.getItem("p5port") || "4642" });
 
   const FIELDS = {
