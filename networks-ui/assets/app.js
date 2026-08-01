@@ -393,13 +393,11 @@ function leagueView() {
   /* --- one-shot season seeding --- */
   const seedBtn = h("button", { class: "runbtn", onclick: seed }, "Generate Last Season ▸");
   const seedNote = h("p", { class: "note" },
-    "Loads the 2025–26 NBA regular season in one shot: all 30 teams, 8-man rosters, and a 26-game marquee slate (opening week, Christmas Day and more) with star stat lines. One TCP connection total — and the server refuses to seed twice, so this can only ever run once.");
+    "Loads the 2025–26 NBA regular season in one shot: all 30 teams, 8-man rosters, and a 26-game marquee slate (opening week, Christmas Day and more) with star stat lines. One TCP connection total — and the server refuses to seed a league that already has data, so it can't be spammed. (The server keeps the league in memory and sleeps when idle, so after a quiet spell you may need to seed again.)");
   function markSeeded() {
     seedBtn.disabled = true;
-    seedBtn.textContent = "Season already loaded ✓";
-    localStorage.setItem("seeded26", "1");
+    seedBtn.textContent = "Season loaded ✓";
   }
-  if (localStorage.getItem("seeded26")) markSeeded();
   async function seed() {
     seedBtn.disabled = true;
     setTerm(term, [{ class: "meta", text: "seeding last season over one TCP connection…" }]);
